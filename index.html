@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>أبو حذيفة للصرافة والتحويلات</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Roboto&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'primary-dark': '#113766',
+            'primary-medium': '#00809e',
+          },
+          fontFamily: {
+            'arabic': ['Cairo', 'sans-serif'],
+            'english': ['Roboto', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'arabic', sans-serif; }
+    .glass { backdrop-filter: blur(10px); background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; }
+    .slide { opacity: 0; transition: opacity 1s; }
+    .slide.active { opacity: 1; }
+    a:hover::after { content: ''; display: block; width: 0; height: 2px; background: #00809e; transition: width 0.3s; }
+    a:hover::after { width: 100%; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+<header class="bg-white/90 backdrop-blur-md shadow-sm fixed w-full z-50">
+  <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+    <div class="text-primary-dark font-bold text-xl">أبو حذيفة للصرافة</div>
+    <nav class="hidden md:flex space-x-6 space-x-reverse">
+      <a href="#home" class="hover:text-primary-medium">الرئيسية</a>
+      <a href="#news" class="hover:text-primary-medium">المستجدات</a>
+      <a href="#rates" class="hover:text-primary-medium">أسعار الصرف</a>
+      <a href="#app" class="hover:text-primary-medium">التطبيق</a>
+      <a href="#contact" class="hover:text-primary-medium">اتصل بنا</a>
+    </nav>
+  </div>
+</header>
+
+<main class="pt-20">
+
+<section id="home" class="h-screen flex items-center justify-center relative">
+  <div class="slide active" style="background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://source.unsplash.com/random/1920x1080/?money') center/cover; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
+    <div class="text-center text-white px-6">
+      <h1 class="text-4xl md:text-6xl font-bold mb-4">تحويلات سريعة وآمنة</h1>
+      <p class="text-lg mb-8">نقدم أفضل أسعار صرف في حضرموت واليمن</p>
+      <a href="#app" class="bg-gradient-to-r from-primary-dark to-primary-medium text-white px-8 py-3 rounded-full font-semibold inline-block">حمل التطبيق</a>
+    </div>
+  </div>
+</section>
+
+<section id="news" class="py-20 bg-gray-50">
+  <div class="container mx-auto px-6">
+    <h2 class="text-3xl font-bold text-center mb-12 text-primary-dark">آخر الأخبار</h2>
+    <div id="news-container" class="grid md:grid-cols-3 gap-8">جارٍ التحميل...</div>
+  </div>
+</section>
+
+<section id="rates" class="py-20">
+  <div class="container mx-auto px-6">
+    <h2 class="text-3xl font-bold text-center mb-12 text-primary-dark">أسعار الصرف</h2>
+    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+      <table class="w-full text-center">
+        <thead class="bg-primary-dark text-white">
+          <tr>
+            <th class="py-3">العملة</th>
+            <th class="py-3">الشراء</th>
+            <th class="py-3">البيع</th>
+          </tr>
+        </thead>
+        <tbody id="rates-body">جارٍ التحميل...</tbody>
+      </table>
+      <div class="p-4 bg-gray-100 text-sm text-gray-600 text-center" id="last-update">آخر تحديث: جارٍ التحميل</div>
+    </div>
+  </div>
+</section>
+
+<section id="app" class="py-20 bg-primary-dark text-white">
+  <div class="container mx-auto px-6 text-center">
+    <h2 class="text-4xl font-bold mb-6">تطبيق "واصل كاش"</h2>
+    <p class="text-xl mb-8">حوّل أموالك من جوالك بسهولة وأمان</p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="#" class="bg-black/30 px-6 py-3 rounded-lg flex items-center space-x-2 hover:bg-black/50" id="app-play">Google Play</a>
+      <a href="#" class="bg-black/30 px-6 py-3 rounded-lg flex items-center space-x-2 hover:bg-black/50" id="app-store">App Store</a>
+    </div>
+  </div>
+</section>
+
+<section id="contact" class="py-20">
+  <div class="container mx-auto px-6">
+    <h2 class="text-3xl font-bold text-center mb-12 text-primary-dark">اتصل بنا</h2>
+    <div class="grid md:grid-cols-2 gap-12">
+      <div>
+        <p><strong>العنوان:</strong> حضرموت، سيئون، شارع الستين</p>
+        <p><strong>واتساب:</strong> <a href="https://wa.me/967733440054" class="text-green-600">خدمة العملاء</a> | <a href="https://wa.me/967772391570" class="text-green-600">الخدمة الذاتية</a></p>
+        <p><strong>البريد:</strong> <a href="mailto:abuhdyfh@gmail.com">abuhdyfh@gmail.com</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="bg-primary-dark text-white py-8">
+  <div class="container mx-auto px-6 text-center">
+    <p>© 2025 أبو حذيفة للصرافة. جميع الحقوق محفوظة.</p>
+  </div>
+</footer>
+
+<script>
+  // ✅ تم إدخال رابط Google Apps Script الصحيح
+  const API_URL = "https://script.google.com/macros/s/AKfycbww78V6aQa0nk2e2pG-_vVAg2GDsip0qrrX7wS6NIcwZ3W8BgXXqHRStdxh2DC8Rycd/exec";
+
+  // جلب الإعدادات
+  fetch(API_URL + "?action=getSettings")
+    .then(r => r.json())
+    .then(settings => {
+      document.getElementById("app-play").href = settings.AppLink_GooglePlay || "https://play.google.com";
+      document.getElementById("app-store").href = settings.AppLink_AppStore || "https://apps.apple.com";
+    })
+    .catch(() => {
+      console.error("فشل جلب الإعدادات");
+    });
+
+  // جلب الأسعار
+  fetch(API_URL + "?action=getRates")
+    .then(r => r.json())
+    .then(data => {
+      const tbody = document.getElementById("rates-body");
+      tbody.innerHTML = "";
+      data.rates.forEach(r => {
+        tbody.innerHTML += `
+          <tr class="border-b">
+            <td class="py-3 font-medium">${r.Currency}</td>
+            <td class="py-3 text-green-600 font-bold">${r.Buy_Sanaa || '-'}</td>
+            <td class="py-3 text-red-600 font-bold">${r.Sell_Sanaa || '-'}</td>
+          </tr>
+        `;
+      });
+      document.getElementById("last-update").textContent = "آخر تحديث: " + new Date().toLocaleString('ar');
+    })
+    .catch(() => {
+      document.getElementById("rates-body").innerHTML = `<tr><td colspan="3" class="py-3 text-red-500">فشل تحميل الأسعار</td></tr>`;
+    });
+
+  // جلب الأخبار
+  fetch(API_URL + "?action=getNews")
+    .then(r => r.json())
+    .then(data => {
+      const container = document.getElementById("news-container");
+      container.innerHTML = "";
+      const latestNews = data.news.filter(n => n.Status === "Published").slice(0, 3);
+      if (latestNews.length === 0) {
+        container.innerHTML = "<p class='col-span-3 text-center'>لا توجد أخبار متاحة حاليًا.</p>";
+      } else {
+        latestNews.forEach(n => {
+          container.innerHTML += `
+            <div class="bg-white glass p-6 rounded-xl shadow-lg">
+              <h3 class="font-bold text-lg">${n.Title}</h3>
+              <p class="text-sm text-gray-600 mt-2 line-clamp-3">${n.Content.substring(0, 120)}...</p>
+              <div class="mt-4 flex justify-between text-xs text-gray-500">
+                <span>${n.Category}</span>
+                <span>${n.PublishDate}</span>
+              </div>
+            </div>
+          `;
+        });
+      }
+    })
+    .catch(() => {
+      document.getElementById("news-container").innerHTML = "<p class='col-span-3 text-center text-red-500'>فشل تحميل الأخبار</p>";
+    });
+</script>
+
+</body>
+</html>
