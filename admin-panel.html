@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>لوحة التحكم - أبو حذيفة</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <style>
+    body { font-family: 'Cairo', sans-serif; }
+    .glass { backdrop-filter: blur(12px); background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); }
+    .sidebar { transition: all 0.3s; }
+    .sidebar:hover { width: 250px; }
+    .nav-link { transition: all 0.2s; }
+    .nav-link:hover { background: rgba(0,128,158,0.2); border-radius: 12px; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex">
+
+  <!-- Sidebar -->
+  <aside class="sidebar bg-primary-dark text-white w-16 md:w-64 h-screen p-4 fixed">
+    <div class="flex items-center space-x-3 space-x-reverse mb-8">
+      <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">AH</div>
+      <span class="font-bold hidden md:block">أبو حذيفة</span>
+    </div>
+    <nav class="space-y-2">
+      <a href="#dashboard" class="nav-link p-3 flex items-center space-x-3 space-x-reverse text-sm md:text-base"><span>📊</span> <span class="hidden md:block">لوحة المعلومات</span></a>
+      <a href="#news" class="nav-link p-3 flex items-center space-x-3 space-x-reverse text-sm md:text-base"><span>📰</span> <span class="hidden md:block">إدارة الأخبار</span></a>
+      <a href="#rates" class="nav-link p-3 flex items-center space-x-3 space-x-reverse text-sm md:text-base"><span>💱</span> <span class="hidden md:block">أسعار الصرف</span></a>
+      <a href="#media" class="nav-link p-3 flex items-center space-x-3 space-x-reverse text-sm md:text-base"><span>🖼️</span> <span class="hidden md:block">مكتبة الوسائط</span></a>
+      <a href="#users" class="nav-link p-3 flex items-center space-x-3 space-x-reverse text-sm md:text-base"><span>👥</span> <span class="hidden md:block">إدارة المستخدمين</span></a>
+      <a href="#" onclick="logout()" class="nav-link p-3 flex items-center space-x-3 space-x-reverse text-sm md:text-base text-red-200"><span>🚪</span> <span class="hidden md:block">تسجيل الخروج</span></a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="mr-16 md:mr-64 p-6 w-full">
+    <header class="bg-white glass p-4 rounded-xl shadow mb-6">
+      <h1 class="text-2xl font-bold text-primary-dark" id="page-title">لوحة المعلومات</h1>
+      <p class="text-gray-600">مرحبًا، <span id="user-greeting">مشرف</span> | دورك: <span id="user-role" class="text-primary-medium font-semibold"></span></p>
+    </header>
+
+    <!-- Dashboard -->
+    <section id="dashboard-content">
+      <div class="grid md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white glass p-6 rounded-xl text-center">
+          <h3 class="text-lg font-bold">الأخبار</h3>
+          <p class="text-3xl font-bold text-primary-medium" id="news-count">...</p>
+        </div>
+        <div class="bg-white glass p-6 rounded-xl text-center">
+          <h3 class="text-lg font-bold">الأسعار</h3>
+          <p class="text-3xl font-bold text-primary-medium" id="rates-count">...</p>
+        </div>
+        <div class="bg-white glass p-6 rounded-xl text-center">
+          <h3 class="text-lg font-bold">المستخدمين</h3>
+          <p class="text-3xl font-bold text-primary-medium" id="users-count">...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- News Management -->
+    <section id="news-content" class="hidden">
+      <button onclick="addNews()" class="bg-primary-medium text-white px-4 py-2 rounded-lg mb-4">+ إضافة خبر جديد</button>
+      <div id="news-list" class="space-y-4">جارٍ التحميل...</div>
+    </section>
+
+    <!-- Rates Management -->
+    <section id="rates-content" class="hidden">
+      <h2 class="text-xl font-bold mb-4">تحديث أسعار الصرف</h2>
+      <table class="w-full bg-white glass rounded-xl overflow-hidden">
+        <thead class="bg-primary-dark text-white">
+          <tr>
+            <th class="py-3">العملة</th>
+            <th class="py-3">الشراء</th>
+            <th class="py-3">البيع</th>
+            <th class="py-3">تحديث</th>
+          </tr>
+        </thead>
+        <tbody id="rates-body">...</tbody>
+      </table>
+    </section>
+
+    <!-- Users Management -->
+    <section id="users-content" class="hidden">
+      <h2 class="text-xl font-bold mb-4">إدارة المستخدمين</h2>
+      <button onclick="addUser()" class="bg-primary-medium text-white px-4 py-2 rounded-lg mb-4">+ إضافة مستخدم</button>
+      <table class="w-full bg-white glass rounded-xl overflow-hidden">
+        <thead class="bg-primary-dark text-white">
+          <tr>
+            <th class="py-3">اسم المستخدم</th>
+            <th class="py-3">الدور</th>
+            <th class="py-3">الحالة</th>
+            <th class="py-3">إجراءات</th>
+          </tr>
+        </thead>
+        <tbody id="users-body">...</tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbww78V6aQa0nk2e2pG-_vVAg2GDsip0qrrX7wS6NIcwZ3W8BgXXqHRStdxh2DC8Rycd/exec";
+    const token = localStorage.getItem('adminToken');
+    const role = localStorage.getItem('adminRole');
+
+    if (!token) window.location.href = 'admin-login.html';
+
+    document.getElementById('user-greeting').textContent = localStorage.getItem('adminUser') || 'مجهول';
+    document.getElementById('user-role').textContent = role;
+
+    // تبديل الأقسام
+    function showSection(id) {
+      document.querySelectorAll('section[id$="-content"]').forEach(s => s.classList.add('hidden'));
+      document.getElementById(id + '-content').classList.remove('hidden');
+      document.getElementById('page-title').textContent = document.querySelector(`[href="#${id}"]`).textContent.trim();
+    }
+
+    // تسجيل الخروج
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'admin-login.html';
+    }
+
+    // جلب البيانات
+    async function fetchData(action) {
+      const res = await fetch(API_URL + "?action=" + action);
+      return await res.json();
+    }
+
+    // عرض البيانات
+    window.onload = async () => {
+      const news = await fetchData('getNews');
+      const rates = await fetchData('getRates');
+      const users = await fetchData('getAdmins');
+
+      document.getElementById('news-count').textContent = news.news?.length || 0;
+      document.getElementById('rates-count').textContent = rates.rates?.length || 0;
+      document.getElementById('users-count').textContent = users.admins?.length || 0;
+
+      // عرض الأسعار
+      const ratesBody = document.getElementById('rates-body');
+      rates.rates?.forEach(r => {
+        ratesBody.innerHTML += `
+          <tr>
+            <td class="py-3 text-center">${r.Currency}</td>
+            <td class="py-3 text-center"><input value="${r.Buy_Sanaa}" class="w-20 text-center border rounded p-1"></td>
+            <td class="py-3 text-center"><input value="${r.Sell_Sanaa}" class="w-20 text-center border rounded p-1"></td>
+            <td class="py-3 text-center"><button class="bg-green-500 text-white px-2 py-1 rounded text-xs" onclick="updateRate('${r.Currency}', this)">حفظ</button></td>
+          </tr>
+        `;
+      });
+
+      // عرض المستخدمين
+      const usersBody = document.getElementById('users-body');
+      users.admins?.forEach(u => {
+        usersBody.innerHTML += `
+          <tr>
+            <td class="py-3">${u.Username}</td>
+            <td class="py-3">${u.Role}</td>
+            <td class="py-3">${u.Status}</td>
+            <td class="py-3">
+              <button class="bg-red-500 text-white px-2 py-1 rounded text-xs" onclick="deleteUser('${u.Username}')">حذف</button>
+            </td>
+          </tr>
+        `;
+      });
+    };
+
+    function updateRate(currency, btn) {
+      // سيتم تنفيذه لاحقًا
+      alert('سيتم تحديث سعر ' + currency);
+    }
+
+    function addUser() {
+      alert('وظيفة الإضافة قيد التطوير');
+    }
+
+    function addNews() {
+      alert('إضافة خبر جديد');
+    }
+
+    function deleteUser(user) {
+      if (confirm('هل أنت متأكد من حذف ' + user + '؟')) {
+        alert('تم الحذف');
+      }
+    }
+  </script>
+</body>
+</html>
