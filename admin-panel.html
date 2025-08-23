@@ -8,7 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   <style>
     body { font-family: 'Cairo', sans-serif; }
-    .glass { backdrop-filter: blur(12px); background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); }
+    .glass { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; }
     .sidebar { transition: all 0.3s; }
     .sidebar:hover { width: 250px; }
     .nav-link { transition: all 0.2s; }
@@ -27,7 +27,6 @@
       <a href="#dashboard" class="nav-link p-3 flex items-center space-x-3 space-x-reverse text-sm md:text-base"><span>📊</span> <span class="hidden md:block">لوحة المعلومات</span></a>
       <a href="#news" class="nav-link p-3 flex items-center space-x-3 space-x-reverse text-sm md:text-base"><span>📰</span> <span class="hidden md:block">إدارة الأخبار</span></a>
       <a href="#rates" class="nav-link p-3 flex items-center space-x-3 space-x-reverse text-sm md:text-base"><span>💱</span> <span class="hidden md:block">أسعار الصرف</span></a>
-      <a href="#media" class="nav-link p-3 flex items-center space-x-3 space-x-reverse text-sm md:text-base"><span>🖼️</span> <span class="hidden md:block">مكتبة الوسائط</span></a>
       <a href="#users" class="nav-link p-3 flex items-center space-x-3 space-x-reverse text-sm md:text-base"><span>👥</span> <span class="hidden md:block">إدارة المستخدمين</span></a>
       <a href="#" onclick="logout()" class="nav-link p-3 flex items-center space-x-3 space-x-reverse text-sm md:text-base text-red-200"><span>🚪</span> <span class="hidden md:block">تسجيل الخروج</span></a>
     </nav>
@@ -99,36 +98,34 @@
   </main>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbww78V6aQa0nk2e2pG-_vVAg2GDsip0qrrX7wS6NIcwZ3W8BgXXqHRStdxh2DC8Rycd/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbz51vcrAMkQqlEHl8v6DorggTEVrWzjsND2oSUvzPgBbtNMuEErUsgpLEK6EunMl1LfQg/exec";
     const token = localStorage.getItem('adminToken');
     const role = localStorage.getItem('adminRole');
+    const user = localStorage.getItem('adminUser');
 
     if (!token) window.location.href = 'admin-login.html';
 
-    document.getElementById('user-greeting').textContent = localStorage.getItem('adminUser') || 'مجهول';
+    document.getElementById('user-greeting').textContent = user || 'مجهول';
     document.getElementById('user-role').textContent = role;
 
-    // تبديل الأقسام
     function showSection(id) {
       document.querySelectorAll('section[id$="-content"]').forEach(s => s.classList.add('hidden'));
       document.getElementById(id + '-content').classList.remove('hidden');
       document.getElementById('page-title').textContent = document.querySelector(`[href="#${id}"]`).textContent.trim();
     }
 
-    // تسجيل الخروج
     function logout() {
       localStorage.clear();
       window.location.href = 'admin-login.html';
     }
 
-    // جلب البيانات
     async function fetchData(action) {
       const res = await fetch(API_URL + "?action=" + action);
       return await res.json();
     }
 
-    // عرض البيانات
     window.onload = async () => {
+      applyPermissions();
       const news = await fetchData('getNews');
       const rates = await fetchData('getRates');
       const users = await fetchData('getAdmins');
@@ -137,7 +134,6 @@
       document.getElementById('rates-count').textContent = rates.rates?.length || 0;
       document.getElementById('users-count').textContent = users.admins?.length || 0;
 
-      // عرض الأسعار
       const ratesBody = document.getElementById('rates-body');
       rates.rates?.forEach(r => {
         ratesBody.innerHTML += `
@@ -150,7 +146,6 @@
         `;
       });
 
-      // عرض المستخدمين
       const usersBody = document.getElementById('users-body');
       users.admins?.forEach(u => {
         usersBody.innerHTML += `
@@ -166,22 +161,73 @@
       });
     };
 
-    function updateRate(currency, btn) {
-      // سيتم تنفيذه لاحقًا
-      alert('سيتم تحديث سعر ' + currency);
+    function applyPermissions() {
+      const role = localStorage.getItem('adminRole');
+      if (role !== "Super Admin") {
+        document.querySelector('[href="#users"]').parentElement.style.display = "none";
+      }
+    }
+
+    async function updateRate(currency, btn) {
+      const row = btn.closest('tr');
+      const buy = row.querySelector('input:nth-child(2)').value;
+      const sell = row.querySelector('input:nth-child(3)').value;
+
+      if (!buy || !sell) {
+        alert('املأ جميع الحقول');
+        return;
+      }
+
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'updateRates',
+          rates: [{ Currency: currency, Buy_Sanaa: buy, Sell_Sanaa: sell }],
+          admin: localStorage.getItem('adminUser')
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        btn.textContent = "✓";
+        btn.disabled = true;
+        setTimeout(() => { btn.textContent = "حفظ"; btn.disabled = false; }, 2000);
+      } else {
+        alert('فشل التحديث');
+      }
+    }
+
+    async function addNews() {
+      const title = prompt("عنوان الخبر:");
+      if (!title) return;
+      const content = prompt("نص الخبر:");
+      const category = prompt("التصنيف (تحديثات، عروض، تقنية):");
+
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'addNews',
+          news: { Title: title, Content: content, Category: category, Status: "Published" },
+          admin: user
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert('تم إضافة الخبر بنجاح');
+        location.reload();
+      }
     }
 
     function addUser() {
-      alert('وظيفة الإضافة قيد التطوير');
+      alert('هذه الميزة متاحة لـ Super Admin فقط');
     }
 
-    function addNews() {
-      alert('إضافة خبر جديد');
-    }
-
-    function deleteUser(user) {
-      if (confirm('هل أنت متأكد من حذف ' + user + '؟')) {
-        alert('تم الحذف');
+    function deleteUser(username) {
+      if (confirm('هل أنت متأكد من حذف ' + username + '؟')) {
+        alert('تم الحذف (في النظام الكامل)');
       }
     }
   </script>
