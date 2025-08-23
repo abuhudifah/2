@@ -24,114 +24,193 @@
   </script>
   <style>
     body { font-family: 'arabic', sans-serif; }
-    .glass { backdrop-filter: blur(10px); background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; }
-    .slide { opacity: 0; transition: opacity 1s; }
-    .slide.active { opacity: 1; }
-    a:hover::after { content: ''; display: block; width: 0; height: 2px; background: #00809e; transition: width 0.3s; }
-    a:hover::after { width: 100%; }
+    .glass {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+    }
+    .fade-in-up {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.8s ease-out;
+    }
+    .fade-in-up.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    a::after {
+      content: '';
+      display: block;
+      width: 0;
+      height: 2px;
+      background: #00809e;
+      transition: width 0.3s;
+    }
+    a:hover::after {
+      width: 100%;
+    }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
 
-<header class="bg-white/90 backdrop-blur-md shadow-sm fixed w-full z-50">
+<!-- ========== HEADER ========== -->
+<header class="fixed w-full bg-white/90 backdrop-blur-md z-50 shadow-sm">
   <div class="container mx-auto px-6 py-4 flex justify-between items-center">
     <div class="text-primary-dark font-bold text-xl">أبو حذيفة للصرافة</div>
-    <nav class="hidden md:flex space-x-6 space-x-reverse">
-      <a href="#home" class="hover:text-primary-medium">الرئيسية</a>
-      <a href="#news" class="hover:text-primary-medium">المستجدات</a>
-      <a href="#rates" class="hover:text-primary-medium">أسعار الصرف</a>
-      <a href="#app" class="hover:text-primary-medium">التطبيق</a>
-      <a href="#contact" class="hover:text-primary-medium">اتصل بنا</a>
+    <nav class="hidden md:flex space-x-8 space-x-reverse">
+      <a href="#home" class="hover:text-primary-medium transition">الرئيسية</a>
+      <a href="#news" class="hover:text-primary-medium transition">المستجدات</a>
+      <a href="#rates" class="hover:text-primary-medium transition">أسعار الصرف</a>
+      <a href="#app" class="hover:text-primary-medium transition">التطبيق</a>
+      <a href="#contact" class="hover:text-primary-medium transition">اتصل بنا</a>
     </nav>
   </div>
 </header>
 
 <main class="pt-20">
 
-<section id="home" class="h-screen flex items-center justify-center relative">
-  <div class="slide active" style="background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://source.unsplash.com/random/1920x1080/?money') center/cover; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
-    <div class="text-center text-white px-6">
-      <h1 class="text-4xl md:text-6xl font-bold mb-4">تحويلات سريعة وآمنة</h1>
-      <p class="text-lg mb-8">نقدم أفضل أسعار صرف في حضرموت واليمن</p>
-      <a href="#app" class="bg-gradient-to-r from-primary-dark to-primary-medium text-white px-8 py-3 rounded-full font-semibold inline-block">حمل التطبيق</a>
+<!-- ========== HERO ========== -->
+<section id="home" class="relative h-screen overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-r from-primary-dark/80 to-primary-medium/60 bg-cover bg-center" style="background-image: url('https://source.unsplash.com/random/1920x1080/?money,exchange');"></div>
+  <div class="absolute inset-0 flex items-center justify-center">
+    <div class="text-center text-white px-6 fade-in-up" id="hero-text">
+      <h1 class="text-5xl font-bold mb-4">تحويلات سريعة وآمنة</h1>
+      <p class="text-xl mb-8">نقدم أفضل أسعار صرف وخدمات تحويل فورية عبر اليمن.</p>
+      <a href="#app" class="bg-gradient-to-r from-primary-dark to-primary-medium px-8 py-3 rounded-full font-semibold hover:shadow-lg inline-block">حمل التطبيق الآن</a>
     </div>
   </div>
+  <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3 space-x-reverse">
+    <div class="w-3 h-3 bg-white/50 rounded-full active"></div>
+  </div>
+  <div class="absolute top-20 left-10 w-16 h-16 bg-primary-medium/20 rounded-full animate-bounce" style="animation-duration: 3s;"></div>
 </section>
 
-<section id="news" class="py-20 bg-gray-50">
+<!-- ========== NEWS ========== -->
+<section id="news" class="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
   <div class="container mx-auto px-6">
-    <h2 class="text-3xl font-bold text-center mb-12 text-primary-dark">آخر الأخبار</h2>
+    <h2 class="text-3xl font-bold text-center mb-12 text-primary-dark fade-in-up">آخر المستجدات</h2>
     <div id="news-container" class="grid md:grid-cols-3 gap-8">جارٍ التحميل...</div>
   </div>
 </section>
 
+<!-- ========== RATES ========== -->
 <section id="rates" class="py-20">
   <div class="container mx-auto px-6">
-    <h2 class="text-3xl font-bold text-center mb-12 text-primary-dark">أسعار الصرف</h2>
-    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+    <h2 class="text-3xl font-bold text-center mb-12 text-primary-dark fade-in-up">أسعار الصرف اليوم</h2>
+    <div class="max-w-2xl mx-auto bg-white glass p-6 rounded-xl shadow-lg">
       <table class="w-full text-center">
         <thead class="bg-primary-dark text-white">
           <tr>
-            <th class="py-3">العملة</th>
-            <th class="py-3">الشراء</th>
-            <th class="py-3">البيع</th>
+            <th class="py-3 px-4">العملة</th>
+            <th class="py-3 px-4">الشراء</th>
+            <th class="py-3 px-4">البيع</th>
           </tr>
         </thead>
         <tbody id="rates-body">جارٍ التحميل...</tbody>
       </table>
-      <div class="p-4 bg-gray-100 text-sm text-gray-600 text-center" id="last-update">آخر تحديث: جارٍ التحميل</div>
+      <div class="mt-4 text-sm text-gray-600 text-center" id="last-update">آخر تحديث: جارٍ التحميل</div>
     </div>
   </div>
 </section>
 
+<!-- ========== APP ========== -->
 <section id="app" class="py-20 bg-primary-dark text-white">
-  <div class="container mx-auto px-6 text-center">
-    <h2 class="text-4xl font-bold mb-6">تطبيق "واصل كاش"</h2>
-    <p class="text-xl mb-8">حوّل أموالك من جوالك بسهولة وأمان</p>
-    <div class="flex flex-wrap justify-center gap-4">
-      <a href="#" class="bg-black/30 px-6 py-3 rounded-lg flex items-center space-x-2 hover:bg-black/50" id="app-play">Google Play</a>
-      <a href="#" class="bg-black/30 px-6 py-3 rounded-lg flex items-center space-x-2 hover:bg-black/50" id="app-store">App Store</a>
+  <div class="container mx-auto px-6">
+    <div class="flex flex-col md:flex-row items-center gap-12">
+      <div class="md:w-1/2 fade-in-up">
+        <h2 class="text-4xl font-bold mb-6">تطبيق "واصل كاش"</h2>
+        <p class="text-lg mb-6 opacity-90">أول تطبيق صرافة ذكي في اليمن، يمنحك تحكمًا كاملاً في تحويلاتك من جوالك.</p>
+        <ul class="space-y-3 mb-8">
+          <li class="flex items-center space-x-3 space-x-reverse"><span class="w-2 h-2 bg-green-300 rounded-full"></span> <span>تحويلات فورية</span></li>
+          <li class="flex items-center space-x-3 space-x-reverse"><span class="w-2 h-2 bg-green-300 rounded-full"></span> <span>أسعار حية</span></li>
+          <li class="flex items-center space-x-3 space-x-reverse"><span class="w-2 h-2 bg-green-300 rounded-full"></span> <span>دعم فني مباشر</span></li>
+        </ul>
+        <div class="flex flex-wrap gap-4">
+          <a href="#" id="app-play" class="bg-black/30 px-6 py-3 rounded-lg flex items-center space-x-2 hover:bg-black/50">Google Play</a>
+          <a href="#" id="app-store" class="bg-black/30 px-6 py-3 rounded-lg flex items-center space-x-2 hover:bg-black/50">App Store</a>
+        </div>
+      </div>
+      <div class="md:w-1/2 flex justify-center">
+        <img src="https://via.placeholder.com/300x600?text=تطبيق+واصل+كاش" alt="تطبيق واصل كاش" class="rounded-2xl shadow-2xl">
+      </div>
     </div>
   </div>
 </section>
 
-<section id="contact" class="py-20">
+<!-- ========== CONTACT ========== -->
+<section id="contact" class="py-20 bg-gray-50">
   <div class="container mx-auto px-6">
     <h2 class="text-3xl font-bold text-center mb-12 text-primary-dark">اتصل بنا</h2>
     <div class="grid md:grid-cols-2 gap-12">
       <div>
-        <p><strong>العنوان:</strong> حضرموت، سيئون، شارع الستين</p>
-        <p><strong>واتساب:</strong> <a href="https://wa.me/967733440054" class="text-green-600">خدمة العملاء</a> | <a href="https://wa.me/967772391570" class="text-green-600">الخدمة الذاتية</a></p>
-        <p><strong>البريد:</strong> <a href="mailto:abuhdyfh@gmail.com">abuhdyfh@gmail.com</a></p>
+        <h3 class="text-xl font-semibold mb-6">معلومات التواصل</h3>
+        <div class="space-y-4">
+          <div class="flex items-center space-x-4 space-x-reverse">
+            <svg class="w-6 h-6 text-primary-medium" fill="currentColor" viewBox="0 0 20 20"><path d="M2 3a1 1 0 011-1h2a1 1 0 011 1v1a1 1 0 01-1 1H3a1 1 0 01-1-1V3zM8 3a1 1 0 011-1h2a1 1 0 011 1v1a1 1 0 01-1 1H9a1 1 0 01-1-1V3zM14 3a1 1 0 011-1h2a1 1 0 011 1v1a1 1 0 01-1 1h-2a1 1 0 01-1-1V3zM3 9a1 1 0 011-1h2a1 1 0 011 1v1a1 1 0 01-1 1H3a1 1 0 01-1-1V9zM9 9a1 1 0 011-1h2a1 1 0 011 1v1a1 1 0 01-1 1H9a1 1 0 01-1-1V9zM15 9a1 1 0 011-1h2a1 1 0 011 1v1a1 1 0 01-1 1h-2a1 1 0 01-1-1V9zM3 15a1 1 0 011-1h2a1 1 0 011 1v1a1 1 0 01-1 1H3a1 1 0 01-1-1v-1zM9 15a1 1 0 011-1h2a1 1 0 011 1v1a1 1 0 01-1 1H9a1 1 0 01-1-1v-1zM15 15a1 1 0 011-1h2a1 1 0 011 1v1a1 1 0 01-1 1h-2a1 1 0 01-1-1v-1z"/></svg>
+            <span>حضرموت، سيئون، شارع الستين</span>
+          </div>
+          <div class="flex items-center space-x-4 space-x-reverse">
+            <svg class="w-6 h-6 text-primary-medium" fill="currentColor" viewBox="0 0 20 20"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
+            <a href="mailto:abuhdyfh@gmail.com" class="hover:underline">abuhdyfh@gmail.com</a>
+          </div>
+          <div class="flex items-center space-x-4 space-x-reverse">
+            <svg class="w-6 h-6 text-primary-medium" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" clip-rule="evenodd"/></svg>
+            <a href="https://wa.me/967733440054" class="hover:underline text-green-600">واتساب (خدمة العملاء)</a>
+          </div>
+        </div>
       </div>
+      <form class="space-y-6">
+        <div><label class="block mb-2">الاسم الكامل</label><input type="text" class="w-full p-3 border rounded-lg focus:ring focus:ring-primary-medium/20 outline-none" required></div>
+        <div><label class="block mb-2">البريد الإلكتروني</label><input type="email" class="w-full p-3 border rounded-lg focus:ring focus:ring-primary-medium/20 outline-none" required></div>
+        <div><label class="block mb-2">الرسالة</label><textarea rows="5" class="w-full p-3 border rounded-lg focus:ring focus:ring-primary-medium/20 outline-none" required></textarea></div>
+        <button type="submit" class="bg-gradient-to-r from-primary-dark to-primary-medium text-white px-8 py-3 rounded-lg font-semibold w-full">إرسال</button>
+      </form>
     </div>
   </div>
 </section>
 
 </main>
 
-<footer class="bg-primary-dark text-white py-8">
-  <div class="container mx-auto px-6 text-center">
-    <p>© 2025 أبو حذيفة للصرافة. جميع الحقوق محفوظة.</p>
+<footer class="bg-primary-dark text-white py-12">
+  <div class="container mx-auto px-6">
+    <div class="grid md:grid-cols-3 gap-12">
+      <div><h3 class="text-xl font-bold mb-4">أبو حذيفة للصرافة</h3><p>أكثر من 10 سنوات من الثقة في تقديم خدمات صرافة وتحويلات آمنة عبر اليمن.</p></div>
+      <div>
+        <h4 class="font-semibold mb-4">روابط سريعة</h4>
+        <ul class="space-y-2"><li><a href="#home" class="opacity-80 hover:opacity-100">الرئيسية</a></li><li><a href="#news">المستجدات</a></li><li><a href="#rates">أسعار الصرف</a></li><li><a href="#app">التطبيق</a></li></ul>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-4">تواصل معنا</h4>
+        <div class="flex space-x-4 space-x-reverse">
+          <a href="#" class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">ف</a>
+          <a href="#" class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">ت</a>
+        </div>
+        <p class="mt-6 text-sm">© 2025 أبو حذيفة للصرافة. جميع الحقوق محفوظة.</p>
+      </div>
+    </div>
   </div>
 </footer>
 
 <script>
-  // ✅ تم إدخال رابط Google Apps Script الصحيح
-  const API_URL = "https://script.google.com/macros/s/AKfycbww78V6aQa0nk2e2pG-_vVAg2GDsip0qrrX7wS6NIcwZ3W8BgXXqHRStdxh2DC8Rycd/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbz51vcrAMkQqlEHl8v6DorggTEVrWzjsND2oSUvzPgBbtNMuEErUsgpLEK6EunMl1LfQg/exec";
 
-  // جلب الإعدادات
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) entry.target.classList.add('show');
+    });
+  });
+  document.querySelectorAll('.fade-in-up').forEach(el => observer.observe(el));
+  document.getElementById('hero-text').classList.add('show');
+
   fetch(API_URL + "?action=getSettings")
     .then(r => r.json())
     .then(settings => {
-      document.getElementById("app-play").href = settings.AppLink_GooglePlay || "https://play.google.com";
-      document.getElementById("app-store").href = settings.AppLink_AppStore || "https://apps.apple.com";
-    })
-    .catch(() => {
-      console.error("فشل جلب الإعدادات");
+      document.getElementById("app-play").href = settings.AppLink_GooglePlay || "#";
+      document.getElementById("app-store").href = settings.AppLink_AppStore || "#";
     });
 
-  // جلب الأسعار
   fetch(API_URL + "?action=getRates")
     .then(r => r.json())
     .then(data => {
@@ -140,44 +219,32 @@
       data.rates.forEach(r => {
         tbody.innerHTML += `
           <tr class="border-b">
-            <td class="py-3 font-medium">${r.Currency}</td>
-            <td class="py-3 text-green-600 font-bold">${r.Buy_Sanaa || '-'}</td>
-            <td class="py-3 text-red-600 font-bold">${r.Sell_Sanaa || '-'}</td>
+            <td class="py-3 px-4 font-medium">${r.Currency}</td>
+            <td class="py-3 px-4 text-green-600 font-bold">${r.Buy_Sanaa}</td>
+            <td class="py-3 px-4 text-red-600 font-bold">${r.Sell_Sanaa}</td>
           </tr>
         `;
       });
       document.getElementById("last-update").textContent = "آخر تحديث: " + new Date().toLocaleString('ar');
-    })
-    .catch(() => {
-      document.getElementById("rates-body").innerHTML = `<tr><td colspan="3" class="py-3 text-red-500">فشل تحميل الأسعار</td></tr>`;
     });
 
-  // جلب الأخبار
   fetch(API_URL + "?action=getNews")
     .then(r => r.json())
     .then(data => {
       const container = document.getElementById("news-container");
       container.innerHTML = "";
-      const latestNews = data.news.filter(n => n.Status === "Published").slice(0, 3);
-      if (latestNews.length === 0) {
-        container.innerHTML = "<p class='col-span-3 text-center'>لا توجد أخبار متاحة حاليًا.</p>";
-      } else {
-        latestNews.forEach(n => {
-          container.innerHTML += `
-            <div class="bg-white glass p-6 rounded-xl shadow-lg">
-              <h3 class="font-bold text-lg">${n.Title}</h3>
-              <p class="text-sm text-gray-600 mt-2 line-clamp-3">${n.Content.substring(0, 120)}...</p>
-              <div class="mt-4 flex justify-between text-xs text-gray-500">
-                <span>${n.Category}</span>
-                <span>${n.PublishDate}</span>
-              </div>
+      data.news.filter(n => n.Status === "Published").slice(0,3).forEach(n => {
+        container.innerHTML += `
+          <div class="bg-white glass p-6 rounded-xl shadow-lg hover:scale-105 transition">
+            <h3 class="font-bold">${n.Title}</h3>
+            <p class="text-gray-600 text-sm mt-2">${n.Content.substring(0,100)}...</p>
+            <div class="flex space-x-2 space-x-reverse text-xs mt-4">
+              <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">${n.Category}</span>
+              <span class="text-gray-500">${n.PublishDate}</span>
             </div>
-          `;
-        });
-      }
-    })
-    .catch(() => {
-      document.getElementById("news-container").innerHTML = "<p class='col-span-3 text-center text-red-500'>فشل تحميل الأخبار</p>";
+          </div>
+        `;
+      });
     });
 </script>
 
