@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>دخول الإدارة - أبو حذيفة</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600&display=swap" rel="stylesheet">
+  <style>body{font-family:'Cairo',sans-serif;}</style>
+</head>
+<body class="bg-gradient-to-br from-primary-dark to-primary-medium min-h-screen flex items-center justify-center p-4">
+
+  <div class="bg-white glass max-w-md w-full p-8 rounded-2xl shadow-2xl text-center">
+    <div class="w-16 h-16 bg-primary-dark text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">AH</div>
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">دخول الإدارة</h2>
+    
+    <form id="loginForm" class="space-y-4">
+      <div>
+        <label class="block text-right mb-2 font-medium">اسم المستخدم</label>
+        <input type="text" id="username" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-medium/30 outline-none" required>
+      </div>
+      <div>
+        <label class="block text-right mb-2 font-medium">كلمة المرور</label>
+        <input type="password" id="password" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-medium/30 outline-none" required>
+      </div>
+      <div class="flex items-center justify-between">
+        <label class="flex items-center">
+          <input type="checkbox" class="ml-2"> <span class="text-sm">تذكرني</span>
+        </label>
+        <a href="#" class="text-primary-medium text-sm hover:underline">نسيت كلمة المرور؟</a>
+      </div>
+      <button type="submit" class="w-full bg-gradient-to-r from-primary-dark to-primary-medium text-white py-3 rounded-lg font-semibold hover:shadow-lg transition">تسجيل الدخول</button>
+    </form>
+
+    <p id="error" class="text-red-500 text-sm mt-4 hidden">بيانات الدخول غير صحيحة</p>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script>
+    document.getElementById('loginForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const user = document.getElementById('username').value;
+      const pass = CryptoJS.SHA256(document.getElementById('password').value).toString();
+
+      const res = await fetch('https://script.google.com/macros/s/AKfycbww78V6aQa0nk2e2pG-_vVAg2GDsip0qrrX7wS6NIcwZ3W8BgXXqHRStdxh2DC8Rycd/exec?action=authenticate&user=' + user + '&pass=' + pass);
+      const data = await res.json();
+
+      if (data.success) {
+        localStorage.setItem('adminToken', data.token);
+        localStorage.setItem('adminRole', data.role);
+        window.location.href = 'admin-panel.html';
+      } else {
+        document.getElementById('error').classList.remove('hidden');
+      }
+    };
+  </script>
+</body>
+</html>
