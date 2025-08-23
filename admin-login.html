@@ -41,12 +41,13 @@
       const user = document.getElementById('username').value;
       const pass = CryptoJS.SHA256(document.getElementById('password').value).toString();
 
-      const res = await fetch('https://script.google.com/macros/s/AKfycbww78V6aQa0nk2e2pG-_vVAg2GDsip0qrrX7wS6NIcwZ3W8BgXXqHRStdxh2DC8Rycd/exec?action=authenticate&user=' + user + '&pass=' + pass);
+      const res = await fetch('https://script.google.com/macros/s/AKfycbz51vcrAMkQqlEHl8v6DorggTEVrWzjsND2oSUvzPgBbtNMuEErUsgpLEK6EunMl1LfQg/exec?action=authenticate&user=' + user + '&pass=' + pass);
       const data = await res.json();
 
       if (data.success) {
         localStorage.setItem('adminToken', data.token);
         localStorage.setItem('adminRole', data.role);
+        localStorage.setItem('adminUser', data.user);
         window.location.href = 'admin-panel.html';
       } else {
         document.getElementById('error').classList.remove('hidden');
