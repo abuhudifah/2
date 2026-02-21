@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أبو حذيفة للصرافة والتحويلات - النظام المتكامل</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- خط Tajawal -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- SheetJS لقراءة Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <!-- Firebase SDK (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <style>
+        * { font-family: 'Tajawal', sans-serif; }
+        .bg-navy { background: #1a365d; }
+        .bg-teal { background: #0d9488; }
+        .navy-gradient { background: linear-gradient(135deg, #1a365d 0%, #0d9488 100%); }
+        .teal-gradient { background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .hover-scale:hover { transform: scale(1.02); transition: 0.2s; }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0px); } }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #1a365d, #0d9488); border-radius: 10px; }
+
+        /* أنيميشن للزر الديناميكي */
+        .pulse-green {
+            animation: pulse-green 2s infinite;
+        }
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .pulse-orange {
+            animation: pulse-orange 2s infinite;
+        }
+        @keyframes pulse-orange {
+            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-4">
+
+<div id="app" class="max-w-7xl mx-auto" x-data="appData()" x-init="init()">
+    <!-- شاشة تسجيل الدخول الرئيسية -->
+    <div x-show="!loggedIn" class="flex items-center justify-center min-h-screen">
+        <div class="glass-card rounded-3xl p-8 w-full max-w-md text-center animate-float">
+            <img src="https://i.ibb.co/7d66h0Lc/20250730-012920.png" alt="شعار أبو حذيفة" class="w-32 h-32 mx-auto mb-4 rounded-2xl shadow-lg">
+            <h1 class="text-3xl font-black text-navy mb-2">أبو حذيفة للصرافة والتحويلات</h1>
+            <p class="text-gray-500 mb-8">نظام إدارة متكامل للصرافة والتحويلات</p>
+            <div class="space-y-4">
+                <button @click="showAdminLogin = true" class="w-full py-4 navy-gradient text-white rounded-2xl font-bold text-lg transition-all hover:shadow-2xl flex items-center justify-center gap-3">
+                    <i class="fas fa-crown"></i> دخول الإدارة
+                </button>
+                <button @click="showEmployeeLogin = true" class="w-full py-4 teal-gradient text-white rounded-2xl font-bold text-lg transition-all hover:shadow-2xl flex items-center justify-center gap-3">
+                    <i class="fas fa-users"></i> دخول الموظفين
+                </button>
+            </div>
+            <p class="text-xs text-gray-400 mt-8">© 2025 جميع الحقوق محفوظة لدى Malek Art </p>
+        </div>
+    </div>
+
+    <!-- نافذة دخول الإدارة -->
+    <div x-show="showAdminLogin" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="glass-card rounded-3xl p-8 w-full max-w-md">
+            <h2 class="text-xl font-bold text-navy mb-6 text-center">دخول الإدارة</h2>
+            <form @submit.prevent="verifyAdmin">
+                <div class="relative mb-4">
+                    <input :type="showAdminPassword ? 'text' : 'password'" x-model="adminPasswordInput" placeholder="كلمة المرور" class="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-teal-500 outline-none pl-10">
+                    <button type="button" @click="showAdminPassword = !showAdminPassword" class="absolute left-3 top-3 text-gray-500">
+                        <i :class="showAdminPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                    </button>
+                </div>
+                <div class="flex items-center gap-2 mb-4">
+                    <input type="checkbox" id="rememberAdmin" x-model="rememberAdmin">
+                    <label for="rememberAdmin">حفظ تسجيل الدخول</label>
+                </div>
+                <div x-show="adminPasswordError" class="text-red-500 text-sm text-center mb-4">كلمة المرور غير صحيحة</div>
+                <div class="flex gap-3">
+                    <button type="button" @click="showAdminLogin = false" class="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition">إلغاء</button>
+                    <button type="submit" class="flex-1 py-3 navy-gradient text-white rounded-xl font-bold hover:shadow-lg transition">دخول</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- نافذة دخول الموظفين -->
+    <div x-show="showEmployeeLogin" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="glass-card rounded-3xl p-8 w-full max-w-md">
+            <h2 class="text-xl font-bold text-navy mb-6 text-center">دخول الموظفين</h2>
+            <form @submit.prevent="verifyEmployee">
+                <input type="text" x-model="employeeUsername" placeholder="اسم المستخدم" class="w-full p-3 border-2 border-gray-200 rounded-xl mb-4 focus:border-teal-500 outline-none">
+                <div class="relative mb-4">
+                    <input :type="showEmployeePassword ? 'text' : 'password'" x-model="employeePassword" placeholder="كلمة المرور" class="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-teal-500 outline-none pl-10">
+                    <button type="button" @click="showEmployeePassword = !showEmployeePassword" class="absolute left-3 top-3 text-gray-500">
+                        <i :class="showEmployeePassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                    </button>
+                </div>
+                <div class="flex items-center gap-2 mb-4">
+                    <input type="checkbox" id="rememberEmployee" x-model="rememberEmployee">
+                    <label for="rememberEmployee">حفظ تسجيل الدخول</label>
+                </div>
+                <div x-show="employeeError" class="text-red-500 text-sm text-center mb-4">بيانات الدخول غير صحيحة</div>
+                <div x-show="deviceError" class="text-red-500 text-sm text-center mb-4">لا يمكن الدخول من هذا الجهاز</div>
+                <div class="flex gap-3">
+                    <button type="button" @click="showEmployeeLogin = false" class="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition">إلغاء</button>
+                    <button type="submit" class="flex-1 py-3 teal-gradient text-white rounded-xl font-bold hover:shadow-lg transition">دخول</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========== لوحة الإدارة ========== -->
+    <div x-show="loggedIn && userRole === 'admin'" class="space-y-6">
+        <!-- الهيدر -->
+        <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <img src="https://i.ibb.co/7d66h0Lc/20250730-012920.png" class="w-12 h-12 rounded-xl">
+                <div>
+                    <h2 class="text-xl font-bold text-navy">لوحة تحكم الإدارة - أبو حذيفة للصرافة والتحويلات</h2>
+                    <p class="text-sm text-teal-600">مرحباً، المدير</p>
+                </div>
+            </div>
+            <button @click="logout" class="px-4 py-2 bg-red-500/10 text-red-600 rounded-xl hover:bg-red-500/20 transition"><i class="fas fa-sign-out-alt ml-1"></i> خروج</button>
+        </div>
+
+        <!-- تبويبات الإدارة -->
+        <div class="flex gap-2 border-b border-gray-200 pb-2 flex-wrap">
+            <button @click="adminTab = 'dashboard'" :class="{'navy-gradient text-white': adminTab === 'dashboard', 'bg-gray-200': adminTab !== 'dashboard'}" class="px-4 py-2 rounded-xl font-bold transition"><i class="fas fa-chart-pie ml-1"></i> لوحة المعلومات</button>
+            <button @click="adminTab = 'clients'" :class="{'navy-gradient text-white': adminTab === 'clients', 'bg-gray-200': adminTab !== 'clients'}" class="px-4 py-2 rounded-xl font-bold transition"><i class="fas fa-users ml-1"></i> العملاء</button>
+            <button @click="adminTab = 'employees'" :class="{'navy-gradient text-white': adminTab === 'employees', 'bg-gray-200': adminTab !== 'employees'}" class="px-4 py-2 rounded-xl font-bold transition"><i class="fas fa-user-tie ml-1"></i> الموظفين</button>
+            <button @click="adminTab = 'attendance'" :class="{'navy-gradient text-white': adminTab === 'attendance', 'bg-gray-200': adminTab !== 'attendance'}" class="px-4 py-2 rounded-xl font-bold transition"><i class="fas fa-calendar-check ml-1"></i> نظام الحضور المتطور</button>
+            <button @click="adminTab = 'notes'" :class="{'navy-gradient text-white': adminTab === 'notes', 'bg-gray-200': adminTab !== 'notes'}" class="px-4 py-2 rounded-xl font-bold transition"><i class="fas fa-sticky-note ml-1"></i> ملاحظات</button>
+        </div>
+
+        <!-- ========== تبويب لوحة المعلومات ========== -->
+        <div x-show="adminTab === 'dashboard'" class="space-y-6">
+            <!-- بطاقات إحصائية -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="glass-card rounded-2xl p-5 hover-scale">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">إجمالي العملاء</p>
+                            <p class="text-3xl font-bold text-navy" x-text="clients.length"></p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center text-green-600 text-2xl"><i class="fas fa-users"></i></div>
+                    </div>
+                </div>
+                <div class="glass-card rounded-2xl p-5 hover-scale">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">الموظفين النشطين</p>
+                            <p class="text-3xl font-bold text-navy" x-text="activeEmployeesCount"></p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-600 text-2xl"><i class="fas fa-user-clock"></i></div>
+                    </div>
+                </div>
+                <div class="glass-card rounded-2xl p-5 hover-scale">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">حضور اليوم</p>
+                            <p class="text-3xl font-bold text-navy" x-text="todayAttendanceCount"></p>
+                        </div>
+                        <div class="w-12 h-12 bg-teal-500/20 rounded-xl flex items-center justify-center text-teal-600 text-2xl"><i class="fas fa-clock"></i></div>
+                    </div>
+                </div>
+                <div class="glass-card rounded-2xl p-5 hover-scale">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">نسبة الانضباط</p>
+                            <p class="text-3xl font-bold text-navy" x-text="disciplineRate + '%'"></p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center text-purple-600 text-2xl"><i class="fas fa-chart-line"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الموظفون المتواجدون حالياً -->
+            <div class="glass-card rounded-2xl p-5">
+                <h3 class="text-lg font-bold text-navy mb-4 flex items-center gap-2"><i class="fas fa-user-check text-teal-600"></i> الموظفون المتواجدون حالياً</h3>
+                <div class="space-y-3">
+                    <template x-for="emp in activeEmployees" :key="emp.id">
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold" x-text="emp.name.charAt(0)"></div>
+                                <span x-text="emp.name"></span>
+                            </div>
+                            <div class="text-sm" x-text="'متبقي: ' + remainingTime(emp)"></div>
+                        </div>
+                    </template>
+                    <p x-show="activeEmployees.length === 0" class="text-gray-400 text-center py-4">لا يوجد موظفون في الدوام حالياً</p>
+                </div>
+            </div>
+
+            <!-- رسم بياني للحضور -->
+            <div class="glass-card rounded-2xl p-5">
+                <canvas id="attendanceChart" class="w-full h-64"></canvas>
+            </div>
+        </div>
+
+        <!-- ========== تبويب العملاء ========== -->
+        <div x-show="adminTab === 'clients'" class="space-y-6">
+            <div class="glass-card rounded-2xl p-5">
+                <h3 class="text-lg font-bold text-navy mb-4 flex items-center gap-2"><i class="fas fa-user-plus text-teal-600"></i> إضافة عميل جديد</h3>
+                <form @submit.prevent="addClient">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <input type="text" x-model="newClient.accountNumber" placeholder="رقم الحساب *" required class="p-3 border-2 border-gray-200 rounded-xl focus:border-teal-500">
+                        <input type="text" x-model="newClient.name" placeholder="اسم العميل *" required class="p-3 border-2 border-gray-200 rounded-xl focus:border-teal-500">
+                        <input type="text" x-model="newClient.region" placeholder="المنطقة" class="p-3 border-2 border-gray-200 rounded-xl">
+                        <input type="number" step="0.01" x-model="newClient.commission" placeholder="العمولة" class="p-3 border-2 border-gray-200 rounded-xl">
+                        <input type="number" step="0.01" x-model="newClient.ceiling" placeholder="التسقيف" class="p-3 border-2 border-gray-200 rounded-xl">
+                        <select x-model="newClient.rating" class="p-3 border-2 border-gray-200 rounded-xl">
+                            <option value="">التقييم</option>
+                            <option value="ممتاز">ممتاز</option>
+                            <option value="جيد">جيد</option>
+                            <option value="متوسط">متوسط</option>
+                            <option value="ضعيف">ضعيف</option>
+                        </select>
+                        <select x-model="newClient.status" class="p-3 border-2 border-gray-200 rounded-xl">
+                            <option value="">حالة العميل</option>
+                            <option value="نشط">نشط</option>
+                            <option value="موقف">موقف</option>
+                            <option value="محظور">محظور</option>
+                        </select>
+                        <select x-model="newClient.accountType" class="p-3 border-2 border-gray-200 rounded-xl">
+                            <option value="">نوع الحساب</option>
+                            <option value="توفير">توفير</option>
+                            <option value="جاري">جاري</option>
+                            <option value="استثماري">استثماري</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="submit" class="px-6 py-3 teal-gradient text-white rounded-xl font-bold hover:shadow-lg transition"><i class="fas fa-save ml-1"></i> حفظ العميل</button>
+                        <button type="button" @click="showImportGuide = true" class="px-6 py-3 navy-gradient text-white rounded-xl font-bold hover:shadow-lg transition"><i class="fas fa-file-excel ml-1"></i> استيراد من Excel</button>
+                        <button type="button" @click="downloadTemplate" class="px-6 py-3 bg-gray-600 text-white rounded-xl font-bold hover:shadow-lg transition"><i class="fas fa-download ml-1"></i> تحميل قالب</button>
+                        <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="hidden" @change="handleExcelUpload">
+                    </div>
+                </form>
+            </div>
+
+            <!-- نافذة تعليمية للاستيراد -->
+            <div x-show="showImportGuide" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                <div class="glass-card rounded-3xl p-8 w-full max-w-2xl">
+                    <h3 class="text-xl font-bold text-navy mb-4">كيفية استيراد العملاء من Excel</h3>
+                    <div class="space-y-4 text-right">
+                        <p>يجب أن يحتوي ملف Excel على الأعمدة التالية بالترتيب:</p>
+                        <div class="bg-gray-100 p-4 rounded-xl font-mono text-sm">
+                            1. رقم الحساب<br>
+                            2. اسم العميل<br>
+                            3. المنطقة<br>
+                            4. العمولة<br>
+                            5. التسقيف<br>
+                            6. التقييم<br>
+                            7. حالة العميل<br>
+                            8. نوع الحساب
+                        </div>
+                        <p>يمكنك <button @click="downloadTemplate" class="text-teal-600 font-bold underline">تحميل قالب جاهز</button> وتعبئته ثم استيراده.</p>
+                        <p>الملفات المدعومة: .xlsx, .xls, .csv</p>
+                    </div>
+                    <div class="flex gap-3 mt-6">
+                        <button @click="showImportGuide = false" class="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold">إغلاق</button>
+                        <button @click="triggerFileInput" class="flex-1 py-3 navy-gradient text-white rounded-xl font-bold">اختيار ملف</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- قائمة العملاء -->
+            <div class="glass-card rounded-2xl p-5">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                    <h3 class="text-lg font-bold text-navy flex items-center gap-2"><i class="fas fa-users text-teal-600"></i> العملاء (<span x-text="clients.length"></span>)</h3>
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <input type="text" x-model="clientSearch" placeholder="بحث..." class="flex-1 p-2 border-2 border-gray-200 rounded-xl focus:border-teal-500">
+                        <select x-model="clientFilterStatus" class="p-2 border-2 border-gray-200 rounded-xl">
+                            <option value="all">كل الحالات</option>
+                            <option value="نشط">نشط</option>
+                            <option value="موقف">موقف</option>
+                            <option value="محظور">محظور</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="overflow-x-auto max-h-96">
+                    <table class="w-full text-right border-collapse">
+                        <thead class="bg-gray-100 sticky top-0">
+                            <tr>
+                                <th class="p-3">رقم الحساب</th>
+                                <th class="p-3">الاسم</th>
+                                <th class="p-3">المنطقة</th>
+                                <th class="p-3">العمولة</th>
+                                <th class="p-3">التسقيف</th>
+                                <th class="p-3">التقييم</th>
+                                <th class="p-3">الحالة</th>
+                                <th class="p-3">نوع الحساب</th>
+                                <th class="p-3">إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="client in filteredClients" :key="client.id">
+                                <tr class="border-b border-gray-200 hover:bg-teal-50 transition">
+                                    <td class="p-3 font-medium" x-text="client.accountNumber"></td>
+                                    <td class="p-3" x-text="client.name"></td>
+                                    <td class="p-3" x-text="client.region || '-'"></td>
+                                    <td class="p-3" x-text="client.commission || 0"></td>
+                                    <td class="p-3" x-text="client.ceiling || 0"></td>
+                                    <td class="p-3" x-text="client.rating || '-'"></td>
+                                    <td class="p-3">
+                                        <span :class="'px-2 py-1 rounded-full text-xs font-bold ' + (client.status === 'نشط' ? 'bg-green-500 text-white' : (client.status === 'موقف' ? 'bg-yellow-500' : 'bg-red-500 text-white'))" x-text="client.status || '-'"></span>
+                                    </td>
+                                    <td class="p-3" x-text="client.accountType || '-'"></td>
+                                    <td class="p-3">
+                                        <button @click="editClient(client)" class="text-teal-600 hover:text-teal-800 ml-2"><i class="fas fa-edit"></i></button>
+                                        <button @click="deleteClient(client.id)" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </template>
+                            <tr x-show="filteredClients.length === 0"><td colspan="9" class="p-8 text-center text-gray-400">لا يوجد عملاء</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== تبويب الموظفين ========== -->
+        <div x-show="adminTab === 'employees'" class="space-y-6">
+            <div class="glass-card rounded-2xl p-5">
+                <h3 class="text-lg font-bold text-navy mb-4 flex items-center gap-2"><i class="fas fa-user-plus text-teal-600"></i> إضافة موظف جديد</h3>
+                <form @submit.prevent="addEmployee">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <input type="text" x-model="newEmployee.name" placeholder="اسم الموظف *" required class="p-3 border-2 border-gray-200 rounded-xl">
+                        <input type="text" x-model="newEmployee.username" placeholder="اسم المستخدم *" required class="p-3 border-2 border-gray-200 rounded-xl">
+                        <input type="password" x-model="newEmployee.password" placeholder="كلمة المرور *" required class="p-3 border-2 border-gray-200 rounded-xl">
+                        <input type="text" x-model="newEmployee.phone" placeholder="رقم الهاتف" class="p-3 border-2 border-gray-200 rounded-xl">
+                        <input type="number" step="0.01" x-model="newEmployee.salary" placeholder="الراتب" class="p-3 border-2 border-gray-200 rounded-xl">
+                        <!-- إدخال يدوي للدور -->
+                        <input type="text" x-model="newEmployee.role" placeholder="الدور (مثال: موظف، مشرف، مدير)" required class="p-3 border-2 border-gray-200 rounded-xl">
+                    </div>
+                    <button type="submit" class="px-6 py-3 teal-gradient text-white rounded-xl font-bold"><i class="fas fa-save ml-1"></i> حفظ الموظف</button>
+                </form>
+            </div>
+            <div class="glass-card rounded-2xl p-5">
+                <h3 class="text-lg font-bold text-navy mb-4">الموظفون الحاليون</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right">
+                        <thead class="bg-gray-100">
+                            <tr><th class="p-3">الاسم</th><th class="p-3">اسم المستخدم</th><th class="p-3">الهاتف</th><th class="p-3">الراتب</th><th class="p-3">الدور</th><th class="p-3">إجراءات</th></tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="emp in employees" :key="emp.id">
+                                <tr class="border-b">
+                                    <td class="p-3" x-text="emp.name"></td>
+                                    <td class="p-3" x-text="emp.username"></td>
+                                    <td class="p-3" x-text="emp.phone || '-'"></td>
+                                    <td class="p-3" x-text="emp.salary || 0"></td>
+                                    <td class="p-3" x-text="emp.role"></td>
+                                    <td class="p-3">
+                                        <button @click="editEmployee(emp)" class="text-teal-600 ml-2"><i class="fas fa-edit"></i></button>
+                                        <button @click="deleteEmployee(emp.id)" class="text-red-600"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </template>
+                            <tr x-show="employees.length === 0"><td colspan="6" class="p-8 text-center text-gray-400">لا يوجد موظفين</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== تبويب نظام الحضور المتطور للإدارة (مع فترتين) ========== -->
+        <div x-show="adminTab === 'attendance'" class="space-y-6">
+            <!-- لوحة تحكم الحضور -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="glass-card rounded-2xl p-5">
+                    <p class="text-sm text-gray-500">حضور اليوم</p>
+                    <p class="text-2xl font-bold" x-text="todayAttendanceCount"></p>
+                </div>
+                <div class="glass-card rounded-2xl p-5">
+                    <p class="text-sm text-gray-500">متأخرون اليوم</p>
+                    <p class="text-2xl font-bold" x-text="lateTodayCount"></p>
+                </div>
+                <div class="glass-card rounded-2xl p-5">
+                    <p class="text-sm text-gray-500">في إجازة</p>
+                    <p class="text-2xl font-bold" x-text="onLeaveCount"></p>
+                </div>
+                <div class="glass-card rounded-2xl p-5">
+                    <p class="text-sm text-gray-500">ساعات إضافية</p>
+                    <p class="text-2xl font-bold" x-text="totalOvertime + ' س'"></p>
+                </div>
+            </div>
+
+            <!-- مركز التحكم في الدوام (فترتين) -->
+            <div class="glass-card rounded-2xl p-5">
+                <h3 class="text-lg font-bold text-navy mb-4">مركز التحكم في الدوام (فترتين)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- الفترة الصباحية -->
+                    <div class="border-l-2 border-teal-500 pr-4">
+                        <h4 class="font-bold text-teal-700 mb-3">الفترة الصباحية</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-bold mb-2">وقت البداية</label>
+                                <input type="time" x-model="morningStart" class="w-full p-2 border-2 border-gray-200 rounded-xl">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold mb-2">وقت النهاية</label>
+                                <input type="time" x-model="morningEnd" class="w-full p-2 border-2 border-gray-200 rounded-xl">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- الفترة المسائية -->
+                    <div class="pr-4">
+                        <h4 class="font-bold text-teal-700 mb-3">الفترة المسائية</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-bold mb-2">وقت البداية</label>
+                                <input type="time" x-model="eveningStart" class="w-full p-2 border-2 border-gray-200 rounded-xl">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold mb-2">وقت النهاية</label>
+                                <input type="time" x-model="eveningEnd" class="w-full p-2 border-2 border-gray-200 rounded-xl">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label class="block text-sm font-bold mb-2">حد التأخير (دقائق)</label>
+                    <input type="number" x-model="lateThreshold" class="w-full p-2 border-2 border-gray-200 rounded-xl md:w-64">
+                </div>
+                <button @click="saveWorkSettings" class="mt-4 px-4 py-2 navy-gradient text-white rounded-xl font-bold">حفظ الإعدادات</button>
+            </div>
+
+            <!-- جدول الحضور المباشر -->
+            <div class="glass-card rounded-2xl p-5">
+                <h3 class="text-lg font-bold text-navy mb-4">سجل الحضور والانصراف المباشر</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right">
+                        <thead class="bg-gray-100">
+                            <tr><th class="p-3">الموظف</th><th class="p-3">التاريخ</th><th class="p-3">الفترة</th><th class="p-3">الحضور</th><th class="p-3">الانصراف</th><th class="p-3">المدة</th><th class="p-3">الحالة</th></tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="att in attendanceRecords.slice().reverse()" :key="att.id">
+                                <tr class="border-b">
+                                    <td class="p-3" x-text="getEmployeeName(att.employeeId)"></td>
+                                    <td class="p-3" x-text="att.date"></td>
+                                    <td class="p-3" x-text="att.shift"></td>
+                                    <td class="p-3" x-text="att.checkIn || '--'"></td>
+                                    <td class="p-3" x-text="att.checkOut || '--'"></td>
+                                    <td class="p-3" x-text="att.duration || '--'"></td>
+                                    <td class="p-3">
+                                        <span :class="att.status === 'متأخر' ? 'bg-orange-500 text-white px-2 py-1 rounded-full text-xs' : (att.status === 'في الموعد' ? 'bg-green-500 text-white px-2 py-1 rounded-full text-xs' : 'bg-gray-400 text-white px-2 py-1 rounded-full text-xs')" x-text="att.status || 'غير محدد'"></span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- محرك التنبيهات -->
+            <div class="glass-card rounded-2xl p-5">
+                <h3 class="text-lg font-bold text-navy mb-4">محرك التنبيهات</h3>
+                <div class="space-y-2">
+                    <template x-for="alert in alerts" :key="alert.id">
+                        <div class="p-3 bg-yellow-100 border-r-4 border-yellow-500 rounded-xl flex justify-between items-center">
+                            <span x-text="alert.message"></span>
+                            <button @click="resolveAlert(alert.id)" class="text-sm text-gray-600 hover:text-gray-800"><i class="fas fa-check"></i></button>
+                        </div>
+                    </template>
+                    <p x-show="alerts.length === 0" class="text-gray-400 text-center py-4">لا توجد تنبيهات حالية</p>
+                </div>
+            </div>
+
+            <!-- التقارير الآلية -->
+            <div class="glass-card rounded-2xl p-5">
+                <h3 class="text-lg font-bold text-navy mb-4">التقارير الآلية</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="p-4 bg-teal-50 rounded-xl">
+                        <p class="text-sm text-gray-600">التقرير اليومي</p>
+                        <p class="text-lg font-bold" x-text="'انضباط: ' + dailyDiscipline + '%'"></p>
+                    </div>
+                    <div class="p-4 bg-teal-50 rounded-xl">
+                        <p class="text-sm text-gray-600">التقرير الأسبوعي</p>
+                        <p class="text-lg font-bold" x-text="'ساعات إضافية: ' + weeklyOvertime"></p>
+                    </div>
+                    <div class="p-4 bg-teal-50 rounded-xl">
+                        <p class="text-sm text-gray-600">التقرير الشهري</p>
+                        <p class="text-lg font-bold" x-text="'غياب: ' + monthlyAbsences"></p>
+                    </div>
+                </div>
+                <button @click="generateReport" class="mt-4 px-4 py-2 navy-gradient text-white rounded-xl font-bold">توليد تقرير شامل</button>
+            </div>
+        </div>
+
+        <!-- ========== تبويب الملاحظات ========== -->
+        <div x-show="adminTab === 'notes'" class="space-y-6">
+            <div class="glass-card rounded-2xl p-5">
+                <h3 class="text-lg font-bold text-navy mb-4">ملاحظات فورية</h3>
+                <form @submit.prevent="addNote">
+                    <textarea x-model="newNote" rows="3" class="w-full p-3 border-2 border-gray-200 rounded-xl mb-4" placeholder="اكتب ملاحظة..."></textarea>
+                    <button type="submit" class="px-6 py-3 navy-gradient text-white rounded-xl font-bold"><i class="fas fa-paper-plane ml-1"></i> نشر</button>
+                </form>
+                <div class="mt-6 space-y-2">
+                    <template x-for="note in notes" :key="note.id">
+                        <div class="p-3 bg-teal-50 rounded-xl flex justify-between items-start">
+                            <p x-text="note.content"></p>
+                            <button @click="deleteNote(note.id)" class="text-red-500"><i class="fas fa-times"></i></button>
+                        </div>
+                    </template>
+                    <p x-show="notes.length === 0" class="text-gray-400 text-center">لا توجد ملاحظات</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== واجهة الموظف ========== -->
+    <div x-show="loggedIn && userRole === 'employee'" class="space-y-6">
+        <!-- الهيدر -->
+        <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <img src="https://i.ibb.co/7d66h0Lc/20250730-012920.png" class="w-12 h-12 rounded-xl">
+                <div>
+                    <h2 class="text-xl font-bold text-navy">واجهة الموظف - أبو حذيفة للصرافة والتحويلات</h2>
+                    <p class="text-sm text-teal-600" x-text="'مرحباً، ' + currentEmployee?.name"></p>
+                </div>
+            </div>
+            <button @click="logout" class="px-4 py-2 bg-red-500/10 text-red-600 rounded-xl hover:bg-red-500/20 transition"><i class="fas fa-sign-out-alt ml-1"></i> خروج</button>
+        </div>
+
+        <!-- نظام الحضور بلمسة واحدة -->
+        <div class="glass-card rounded-2xl p-6">
+            <h3 class="text-xl font-bold text-navy mb-6 text-center">نظام الحضور الذكي</h3>
+            <div class="flex flex-col items-center justify-center gap-6">
+                <!-- زر الحضور الديناميكي -->
+                <button @click="handleAttendance" :class="attendanceButtonClass" class="w-48 h-48 rounded-full text-white text-2xl font-bold shadow-2xl flex flex-col items-center justify-center gap-2 transition-all hover:scale-105">
+                    <i :class="attendanceIcon" class="text-5xl"></i>
+                    <span x-text="attendanceButtonText"></span>
+                </button>
+                <!-- بطاقة الحالة اللحظية -->
+                <div class="w-full max-w-md p-4 bg-gray-100 rounded-2xl text-center">
+                    <p class="text-lg font-bold text-navy">حالتك اليوم</p>
+                    <p class="text-3xl font-black" x-text="todayStatus"></p>
+                    <p class="text-sm text-gray-600 mt-2" x-text="'ساعات العمل: ' + workedHours + ' / ' + totalDailyHours"></p>
+                    <div class="w-full bg-gray-300 h-4 rounded-full mt-2">
+                        <div class="bg-teal-600 h-4 rounded-full" :style="'width: ' + workProgress + '%'"></div>
+                    </div>
+                </div>
+                <!-- سجل الحركة السريع -->
+                <div class="w-full max-w-md">
+                    <h4 class="font-bold text-navy mb-2">آخر الحركات</h4>
+                    <div class="space-y-2">
+                        <template x-for="mov in lastFiveMoves" :key="mov.id">
+                            <div class="flex justify-between p-2 bg-teal-50 rounded-xl text-sm">
+                                <span x-text="mov.type === 'in' ? 'تسجيل دخول' : 'تسجيل خروج'"></span>
+                                <span x-text="mov.time"></span>
+                                <span :class="mov.type === 'in' ? 'text-green-600' : 'text-red-600'" x-text="mov.status"></span>
+                            </div>
+                        </template>
+                        <p x-show="lastFiveMoves.length === 0" class="text-gray-400 text-center">لا توجد حركات بعد</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- عرض العملاء -->
+        <div class="glass-card rounded-2xl p-5">
+            <div class="flex flex-col md:flex-row gap-4 mb-4">
+                <input type="text" x-model="clientSearch" placeholder="بحث عن عميل..." class="flex-1 p-3 border-2 border-gray-200 rounded-xl">
+                <select x-model="clientFilterStatus" class="p-3 border-2 border-gray-200 rounded-xl">
+                    <option value="all">كل الحالات</option>
+                    <option value="نشط">نشط</option>
+                    <option value="موقف">موقف</option>
+                    <option value="محظور">محظور</option>
+                </select>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-right">
+                    <thead class="bg-gray-100">
+                        <tr><th class="p-3">رقم الحساب</th><th class="p-3">الاسم</th><th class="p-3">المنطقة</th><th class="p-3">العمولة</th><th class="p-3">التسقيف</th><th class="p-3">التقييم</th><th class="p-3">الحالة</th><th class="p-3">نوع الحساب</th></tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="client in filteredClients" :key="client.id">
+                            <tr class="border-b">
+                                <td class="p-3" x-text="client.accountNumber"></td>
+                                <td class="p-3" x-text="client.name"></td>
+                                <td class="p-3" x-text="client.region || '-'"></td>
+                                <td class="p-3" x-text="client.commission || 0"></td>
+                                <td class="p-3" x-text="client.ceiling || 0"></td>
+                                <td class="p-3" x-text="client.rating || '-'"></td>
+                                <td class="p-3"><span :class="'px-2 py-1 rounded-full text-xs font-bold ' + (client.status === 'نشط' ? 'bg-green-500 text-white' : (client.status === 'موقف' ? 'bg-yellow-500' : 'bg-red-500 text-white'))" x-text="client.status || '-'"></span></td>
+                                <td class="p-3" x-text="client.accountType || '-'"></td>
+                            </tr>
+                        </template>
+                        <tr x-show="filteredClients.length === 0"><td colspan="8" class="p-8 text-center text-gray-400">لا يوجد عملاء</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- عرض الملاحظات -->
+        <div class="glass-card rounded-2xl p-5">
+            <h3 class="text-lg font-bold text-navy mb-4">ملاحظات الإدارة</h3>
+            <div class="space-y-2">
+                <template x-for="note in notes" :key="note.id">
+                    <div class="p-3 bg-teal-50 rounded-xl" x-text="note.content"></div>
+                </template>
+                <p x-show="notes.length === 0" class="text-gray-400 text-center">لا توجد ملاحظات</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== إعدادات Firebase (الخاصة بك) ==========
+    const firebaseConfig = {
+        apiKey: "AIzaSyAGjsmtz8ZpzENYkK5_BscIEKltwNNs-us",
+        authDomain: "abu-hudhayfa-agents.firebaseapp.com",
+        databaseURL: "https://abu-hudhayfa-agents-default-rtdb.firebaseio.com",
+        projectId: "abu-hudhayfa-agents",
+        storageBucket: "abu-hudhayfa-agents.firebasestorage.app",
+        messagingSenderId: "466546117624",
+        appId: "1:466546117624:web:d399917c242f42e957a40d"
+    };
+    // تهيئة Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // توليد معرف جهاز فريد (يُخزن في localStorage)
+    function getDeviceId() {
+        let deviceId = localStorage.getItem('deviceId');
+        if (!deviceId) {
+            deviceId = 'device_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            localStorage.setItem('deviceId', deviceId);
+        }
+        return deviceId;
+    }
+
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('appData', () => ({
+            // ========== حالة الدخول ==========
+            loggedIn: false,
+            userRole: null,
+            showAdminLogin: false,
+            showEmployeeLogin: false,
+            adminPasswordInput: '',
+            adminPasswordError: false,
+            adminPassword: 'mana1234',
+            showAdminPassword: false,
+            rememberAdmin: false,
+            employeeUsername: '',
+            employeePassword: '',
+            showEmployeePassword: false,
+            rememberEmployee: false,
+            employeeError: false,
+            deviceError: false,
+            currentEmployee: null,
+            deviceId: getDeviceId(),
+
+            // ========== واجهة الإدارة ==========
+            adminTab: 'dashboard',
+
+            // بيانات العملاء
+            clients: [],
+            newClient: { accountNumber: '', name: '', region: '', commission: 0, ceiling: 0, rating: '', status: '', accountType: '' },
+            clientSearch: '',
+            clientFilterStatus: 'all',
+            showImportGuide: false,
+
+            // بيانات الموظفين
+            employees: [],
+            newEmployee: { name: '', username: '', password: '', phone: '', salary: 0, role: '' },
+
+            // بيانات الحضور (مع فترتين)
+            attendanceRecords: [],
+            selectedShift: 'صباحي',
+            morningStart: '09:00',
+            morningEnd: '13:00',
+            eveningStart: '14:00',
+            eveningEnd: '18:00',
+            lateThreshold: 15,
+            alerts: [],
+
+            // بيانات الملاحظات
+            notes: [],
+            newNote: '',
+
+            // ========== التهيئة ==========
+            init() {
+                this.loadRememberedLogin();
+                this.listenToChanges();
+                this.loadWorkSettings();
+                this.$nextTick(() => {
+                    if (document.getElementById('attendanceChart')) this.renderAttendanceChart();
+                });
+            },
+
+            listenToChanges() {
+                db.ref('clients').on('value', snapshot => {
+                    const data = snapshot.val();
+                    this.clients = data ? Object.values(data) : [];
+                });
+                db.ref('employees').on('value', snapshot => {
+                    const data = snapshot.val();
+                    this.employees = data ? Object.values(data) : [];
+                });
+                db.ref('attendance').on('value', snapshot => {
+                    const data = snapshot.val();
+                    this.attendanceRecords = data ? Object.values(data) : [];
+                    this.checkAlerts();
+                });
+                db.ref('notes').on('value', snapshot => {
+                    const data = snapshot.val();
+                    this.notes = data ? Object.values(data) : [];
+                });
+                db.ref('settings/workTime').on('value', snapshot => {
+                    const data = snapshot.val();
+                    if (data) {
+                        this.morningStart = data.morningStart || '09:00';
+                        this.morningEnd = data.morningEnd || '13:00';
+                        this.eveningStart = data.eveningStart || '14:00';
+                        this.eveningEnd = data.eveningEnd || '18:00';
+                        this.lateThreshold = data.lateThreshold || 15;
+                    }
+                });
+            },
+
+            // حفظ تسجيل الدخول
+            loadRememberedLogin() {
+                // يمكن تنفيذها حسب الحاجة
+            },
+
+            // ========== الإحصائيات ==========
+            get activeEmployees() {
+                const today = new Date().toLocaleDateString('en-CA');
+                return this.employees.filter(emp => {
+                    const record = this.attendanceRecords.find(a => a.employeeId === emp.id && a.date === today && a.checkOut === null);
+                    return record;
+                });
+            },
+
+            get activeEmployeesCount() {
+                return this.activeEmployees.length;
+            },
+
+            remainingTime(emp) {
+                const today = new Date().toLocaleDateString('en-CA');
+                const record = this.attendanceRecords.find(a => a.employeeId === emp.id && a.date === today);
+                if (!record || !record.checkIn) return 'غير متوفر';
+                // تحديد نهاية الدوام بناءً على الفترة
+                const now = new Date();
+                let endHour, endMin;
+                if (record.shift === 'صباحي') {
+                    [endHour, endMin] = this.morningEnd.split(':').map(Number);
+                } else {
+                    [endHour, endMin] = this.eveningEnd.split(':').map(Number);
+                }
+                const end = new Date();
+                end.setHours(endHour, endMin, 0);
+                if (now >= end) return '0 ساعات';
+                const diff = end - now;
+                const hours = Math.floor(diff / 3600000);
+                const minutes = Math.floor((diff % 3600000) / 60000);
+                return `${hours} ساعة ${minutes} دقيقة`;
+            },
+
+            get todayAttendanceCount() {
+                const today = new Date().toLocaleDateString('en-CA');
+                return this.attendanceRecords.filter(a => a.date === today && a.checkIn).length;
+            },
+
+            get lateTodayCount() {
+                const today = new Date().toLocaleDateString('en-CA');
+                return this.attendanceRecords.filter(a => a.date === today && a.status === 'متأخر').length;
+            },
+
+            get onLeaveCount() { return 0; },
+            get totalOvertime() { return 0; },
+
+            get disciplineRate() {
+                if (this.attendanceRecords.length === 0) return 0;
+                const onTime = this.attendanceRecords.filter(a => a.status === 'في الموعد').length;
+                return Math.round((onTime / this.attendanceRecords.length) * 100);
+            },
+
+            get dailyDiscipline() {
+                const today = new Date().toLocaleDateString('en-CA');
+                const todayRecords = this.attendanceRecords.filter(a => a.date === today);
+                if (todayRecords.length === 0) return 0;
+                const onTime = todayRecords.filter(a => a.status === 'في الموعد').length;
+                return Math.round((onTime / todayRecords.length) * 100);
+            },
+
+            get weeklyOvertime() { return '12 ساعة'; },
+            get monthlyAbsences() { return '3 أيام'; },
+
+            // ========== العملاء ==========
+            get filteredClients() {
+                let filtered = this.clients;
+                if (this.clientSearch) {
+                    const q = this.clientSearch.toLowerCase();
+                    filtered = filtered.filter(c => 
+                        c.name?.toLowerCase().includes(q) ||
+                        c.accountNumber?.includes(q) ||
+                        c.region?.toLowerCase().includes(q)
+                    );
+                }
+                if (this.clientFilterStatus !== 'all') {
+                    filtered = filtered.filter(c => c.status === this.clientFilterStatus);
+                }
+                return filtered;
+            },
+
+            addClient() {
+                if (!this.newClient.accountNumber || !this.newClient.name) return;
+                const client = { ...this.newClient, id: Date.now() + '-' + Math.random().toString(36).substr(2, 9) };
+                db.ref('clients/' + client.id).set(client)
+                    .then(() => {
+                        alert('تمت الإضافة');
+                        this.newClient = { accountNumber: '', name: '', region: '', commission: 0, ceiling: 0, rating: '', status: '', accountType: '' };
+                    })
+                    .catch(err => alert('خطأ: ' + err.message));
+            },
+
+            deleteClient(id) {
+                if (confirm('تأكيد الحذف؟')) {
+                    db.ref('clients/' + id).remove()
+                        .then(() => alert('تم الحذف'))
+                        .catch(err => alert('خطأ: ' + err.message));
+                }
+            },
+
+            editClient(client) {
+                const newName = prompt('تعديل الاسم', client.name);
+                if (newName) {
+                    client.name = newName;
+                    db.ref('clients/' + client.id).update(client)
+                        .then(() => alert('تم التعديل'))
+                        .catch(err => alert(err.message));
+                }
+            },
+
+            triggerFileInput() {
+                document.getElementById('excelFile').click();
+                this.showImportGuide = false;
+            },
+
+            downloadTemplate() {
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet([
+                    ['رقم الحساب', 'اسم العميل', 'المنطقة', 'العمولة', 'التسقيف', 'التقييم', 'حالة العميل', 'نوع الحساب'],
+                    ['ACC001', 'محمد أحمد', 'الرياض', '1000', '50000', 'ممتاز', 'نشط', 'جاري']
+                ]);
+                XLSX.utils.book_append_sheet(wb, ws, 'قالب');
+                XLSX.writeFile(wb, 'قالب_عملاء.xlsx');
+            },
+
+            handleExcelUpload(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const data = new Uint8Array(ev.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                    for (let i = 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (row.length < 2) continue;
+                        const client = {
+                            id: Date.now() + '-' + i + '-' + Math.random().toString(36).substr(2, 5),
+                            accountNumber: row[0]?.toString() || '',
+                            name: row[1]?.toString() || '',
+                            region: row[2]?.toString() || '',
+                            commission: parseFloat(row[3]) || 0,
+                            ceiling: parseFloat(row[4]) || 0,
+                            rating: row[5]?.toString() || '',
+                            status: row[6]?.toString() || '',
+                            accountType: row[7]?.toString() || ''
+                        };
+                        if (client.name) {
+                            db.ref('clients/' + client.id).set(client);
+                        }
+                    }
+                    alert('تم رفع الملف وجاري الإضافة...');
+                };
+                reader.readAsArrayBuffer(file);
+                e.target.value = '';
+            },
+
+            // ========== الموظفين ==========
+            addEmployee() {
+                if (!this.newEmployee.name || !this.newEmployee.username || !this.newEmployee.password || !this.newEmployee.role) return;
+                const emp = { ...this.newEmployee, id: Date.now() + '-' + Math.random().toString(36).substr(2, 9) };
+                db.ref('employees/' + emp.id).set(emp)
+                    .then(() => {
+                        alert('تمت الإضافة');
+                        this.newEmployee = { name: '', username: '', password: '', phone: '', salary: 0, role: '' };
+                    })
+                    .catch(err => alert(err.message));
+            },
+
+            deleteEmployee(id) {
+                if (confirm('حذف الموظف؟')) {
+                    db.ref('employees/' + id).remove()
+                        .then(() => alert('تم الحذف'))
+                        .catch(err => alert(err.message));
+                }
+            },
+
+            editEmployee(emp) {
+                const newName = prompt('الاسم الجديد', emp.name);
+                if (newName) {
+                    emp.name = newName;
+                    db.ref('employees/' + emp.id).update(emp)
+                        .then(() => alert('تم التعديل'))
+                        .catch(err => alert(err.message));
+                }
+            },
+
+            // ========== نظام الحضور ==========
+            get attendanceButtonText() {
+                if (!this.currentEmployee) return 'تسجيل الدخول';
+                const today = new Date().toLocaleDateString('en-CA');
+                const record = this.attendanceRecords.find(a => a.employeeId === this.currentEmployee.id && a.date === today);
+                if (!record) return 'تسجيل دخول';
+                if (record.checkIn && !record.checkOut) return 'تسجيل خروج';
+                if (record.checkIn && record.checkOut) return 'تم الانصراف';
+                return 'تسجيل دخول';
+            },
+
+            get attendanceButtonClass() {
+                if (!this.currentEmployee) return 'bg-gray-400';
+                const today = new Date().toLocaleDateString('en-CA');
+                const record = this.attendanceRecords.find(a => a.employeeId === this.currentEmployee.id && a.date === today);
+                if (!record) {
+                    // التحقق من التأخر حسب الفترة المختارة
+                    const now = new Date();
+                    let startHour, startMin;
+                    if (this.selectedShift === 'صباحي') {
+                        [startHour, startMin] = this.morningStart.split(':').map(Number);
+                    } else {
+                        [startHour, startMin] = this.eveningStart.split(':').map(Number);
+                    }
+                    const start = new Date(); start.setHours(startHour, startMin, 0);
+                    if (now > start) return 'bg-orange-500 pulse-orange';
+                    return 'bg-green-500 pulse-green';
+                }
+                if (record.checkIn && !record.checkOut) return 'bg-blue-500';
+                if (record.checkIn && record.checkOut) return 'bg-gray-500';
+                return 'bg-green-500';
+            },
+
+            get attendanceIcon() {
+                if (!this.currentEmployee) return 'fas fa-clock';
+                const today = new Date().toLocaleDateString('en-CA');
+                const record = this.attendanceRecords.find(a => a.employeeId === this.currentEmployee.id && a.date === today);
+                if (!record) return 'fas fa-sign-in-alt';
+                if (record.checkIn && !record.checkOut) return 'fas fa-sign-out-alt';
+                return 'fas fa-check-circle';
+            },
+
+            get todayStatus() {
+                if (!this.currentEmployee) return 'غير مسجل';
+                const today = new Date().toLocaleDateString('en-CA');
+                const record = this.attendanceRecords.find(a => a.employeeId === this.currentEmployee.id && a.date === today);
+                if (!record) return 'لم يسجل بعد';
+                if (record.checkIn && !record.checkOut) return 'في الدوام';
+                if (record.checkIn && record.checkOut) return 'مغادر';
+                return 'غير معروف';
+            },
+
+            get workedHours() {
+                if (!this.currentEmployee) return '0';
+                const today = new Date().toLocaleDateString('en-CA');
+                const record = this.attendanceRecords.find(a => a.employeeId === this.currentEmployee.id && a.date === today);
+                if (!record || !record.checkIn) return '0';
+                const now = new Date();
+                const checkIn = new Date();
+                const [inHour, inMin] = record.checkIn.split(':').map(Number);
+                checkIn.setHours(inHour, inMin, 0);
+                const end = record.checkOut ? new Date() : now;
+                if (record.checkOut) {
+                    const [outHour, outMin] = record.checkOut.split(':').map(Number);
+                    end.setHours(outHour, outMin, 0);
+                }
+                const diff = end - checkIn;
+                const hours = diff / 3600000;
+                return hours.toFixed(1);
+            },
+
+            get totalDailyHours() {
+                if (this.selectedShift === 'صباحي') {
+                    const [sH, sM] = this.morningStart.split(':').map(Number);
+                    const [eH, eM] = this.morningEnd.split(':').map(Number);
+                    return ((eH*60 + eM) - (sH*60 + sM)) / 60;
+                } else {
+                    const [sH, sM] = this.eveningStart.split(':').map(Number);
+                    const [eH, eM] = this.eveningEnd.split(':').map(Number);
+                    return ((eH*60 + eM) - (sH*60 + sM)) / 60;
+                }
+            },
+
+            get workProgress() {
+                const worked = parseFloat(this.workedHours) || 0;
+                const total = this.totalDailyHours;
+                if (total === 0) return 0;
+                return Math.min(100, (worked / total) * 100);
+            },
+
+            get lastFiveMoves() {
+                if (!this.currentEmployee) return [];
+                return this.attendanceRecords
+                    .filter(a => a.employeeId === this.currentEmployee.id)
+                    .sort((a,b) => new Date(b.date + ' ' + (b.checkIn || '')) - new Date(a.date + ' ' + (a.checkIn || '')))
+                    .slice(0,5)
+                    .map(a => ({
+                        id: a.id,
+                        type: a.checkIn && !a.checkOut ? 'in' : (a.checkOut ? 'out' : 'in'),
+                        time: a.checkIn || a.checkOut,
+                        status: a.status || 'في الموعد'
+                    }));
+            },
+
+            handleAttendance() {
+                if (!this.currentEmployee) return;
+                const today = new Date().toLocaleDateString('en-CA');
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+                const record = this.attendanceRecords.find(a => a.employeeId === this.currentEmployee.id && a.date === today);
+
+                if (!record) {
+                    // تسجيل دخول
+                    let startHour, startMin;
+                    if (this.selectedShift === 'صباحي') {
+                        [startHour, startMin] = this.morningStart.split(':').map(Number);
+                    } else {
+                        [startHour, startMin] = this.eveningStart.split(':').map(Number);
+                    }
+                    const start = new Date(); start.setHours(startHour, startMin, 0);
+                    const status = now > start ? 'متأخر' : 'في الموعد';
+                    const newRecord = {
+                        id: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+                        employeeId: this.currentEmployee.id,
+                        date: today,
+                        shift: this.selectedShift,
+                        checkIn: timeStr,
+                        checkOut: null,
+                        duration: null,
+                        status: status
+                    };
+                    db.ref('attendance/' + newRecord.id).set(newRecord);
+                } else if (record.checkIn && !record.checkOut) {
+                    // تسجيل خروج
+                    record.checkOut = timeStr;
+                    const [inHour, inMin] = record.checkIn.split(':').map(Number);
+                    const [outHour, outMin] = timeStr.split(':').map(Number);
+                    const diff = (outHour*60 + outMin) - (inHour*60 + inMin);
+                    record.duration = Math.floor(diff/60) + ' ساعة ' + (diff%60) + ' دقيقة';
+                    db.ref('attendance/' + record.id).update(record);
+                } else {
+                    alert('لقد سجلت حضور وانصراف مسبقاً');
+                }
+            },
+
+            // دوال للإدارة
+            checkAlerts() {
+                const today = new Date().toLocaleDateString('en-CA');
+                const lateToday = this.attendanceRecords.filter(a => a.date === today && a.status === 'متأخر');
+                lateToday.forEach(att => {
+                    const emp = this.getEmployeeName(att.employeeId);
+                    if (!this.alerts.some(a => a.employeeId === att.employeeId && a.date === today)) {
+                        this.alerts.push({
+                            id: Date.now() + Math.random(),
+                            employeeId: att.employeeId,
+                            date: today,
+                            message: `الموظف ${emp} متأخر اليوم (سجل دخول ${att.checkIn})`
+                        });
+                    }
+                });
+            },
+
+            resolveAlert(id) {
+                this.alerts = this.alerts.filter(a => a.id !== id);
+            },
+
+            saveWorkSettings() {
+                db.ref('settings/workTime').set({
+                    morningStart: this.morningStart,
+                    morningEnd: this.morningEnd,
+                    eveningStart: this.eveningStart,
+                    eveningEnd: this.eveningEnd,
+                    lateThreshold: this.lateThreshold
+                }).then(() => alert('تم حفظ إعدادات الدوام'));
+            },
+
+            generateReport() {
+                alert('تم توليد تقرير شامل (يمكن تحويله إلى PDF لاحقاً)');
+            },
+
+            // ========== الملاحظات ==========
+            addNote() {
+                if (!this.newNote.trim()) return;
+                const note = { id: Date.now() + '-' + Math.random().toString(36).substr(2, 9), content: this.newNote.trim() };
+                db.ref('notes/' + note.id).set(note).then(() => { this.newNote = ''; });
+            },
+
+            deleteNote(id) {
+                db.ref('notes/' + id).remove();
+            },
+
+            // ========== الدخول ==========
+            verifyAdmin() {
+                if (this.adminPasswordInput === this.adminPassword) {
+                    this.loggedIn = true;
+                    this.userRole = 'admin';
+                    this.showAdminLogin = false;
+                    this.adminPasswordError = false;
+                } else {
+                    this.adminPasswordError = true;
+                }
+            },
+
+            verifyEmployee() {
+                const emp = this.employees.find(e => e.username === this.employeeUsername && e.password === this.employeePassword);
+                if (!emp) {
+                    this.employeeError = true;
+                    return;
+                }
+                // التحقق من الجهاز
+                if (!emp.allowedDevice) {
+                    // أول مرة دخول - نسجل الجهاز
+                    emp.allowedDevice = this.deviceId;
+                    db.ref('employees/' + emp.id).update({ allowedDevice: this.deviceId })
+                        .then(() => {
+                            this.currentEmployee = emp;
+                            this.loggedIn = true;
+                            this.userRole = 'employee';
+                            this.showEmployeeLogin = false;
+                            this.employeeError = false;
+                            this.deviceError = false;
+                        });
+                } else if (emp.allowedDevice !== this.deviceId) {
+                    // جهاز غير مسموح به
+                    this.deviceError = true;
+                    this.employeeError = false;
+                } else {
+                    // جهاز مسموح به
+                    this.currentEmployee = emp;
+                    this.loggedIn = true;
+                    this.userRole = 'employee';
+                    this.showEmployeeLogin = false;
+                    this.employeeError = false;
+                    this.deviceError = false;
+                }
+            },
+
+            logout() {
+                this.loggedIn = false;
+                this.userRole = null;
+                this.currentEmployee = null;
+            },
+
+            // ========== الرسوم البيانية ==========
+            renderAttendanceChart() {
+                const ctx = document.getElementById('attendanceChart')?.getContext('2d');
+                if (!ctx) return;
+                if (this.attChart) this.attChart.destroy();
+                const last7Days = [...Array(7)].map((_, i) => {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    return d.toLocaleDateString('en-CA');
+                }).reverse();
+                const data = last7Days.map(date => {
+                    return this.attendanceRecords.filter(a => a.date === date && a.checkIn).length;
+                });
+                this.attChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: last7Days.map(d => d.slice(5)),
+                        datasets: [{
+                            label: 'عدد الحضور',
+                            data: data,
+                            borderColor: '#0d9488',
+                            backgroundColor: 'rgba(13,148,136,0.1)',
+                            fill: true
+                        }]
+                    }
+                });
+            },
+
+            getEmployeeName(id) {
+                const emp = this.employees.find(e => e.id === id);
+                return emp ? emp.name : 'غير معروف';
+            }
+        }));
+    });
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</body>
+  </html>
