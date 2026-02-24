@@ -77,22 +77,25 @@
         </div>
     </div>
 
-    <!-- نافذة دخول الإدارة -->
+    <!-- نافذة دخول الإدارة باستخدام Firebase Auth -->
     <div x-show="showAdminLogin" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="glass-card rounded-3xl p-8 w-full max-w-md">
             <h2 class="text-xl font-bold text-navy mb-6 text-center">دخول الإدارة</h2>
             <form @submit.prevent="verifyAdmin">
+                <div class="mb-4">
+                    <input type="email" x-model="adminEmail" placeholder="البريد الإلكتروني" required class="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-teal-500 outline-none">
+                </div>
                 <div class="relative mb-4">
-                    <input :type="showAdminPassword ? 'text' : 'password'" x-model="adminPasswordInput" placeholder="كلمة المرور" class="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-teal-500 outline-none pl-10">
+                    <input :type="showAdminPassword ? 'text' : 'password'" x-model="adminPasswordInput" placeholder="كلمة المرور" required class="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-teal-500 outline-none pl-10">
                     <button type="button" @click="showAdminPassword = !showAdminPassword" class="absolute left-3 top-3 text-gray-500">
                         <i :class="showAdminPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
                     </button>
                 </div>
                 <div class="flex items-center gap-2 mb-4">
                     <input type="checkbox" id="rememberAdmin" x-model="rememberAdmin">
-                    <label for="rememberAdmin">حفظ تسجيل الدخول</label>
+                    <label for="rememberAdmin">تذكرني</label>
                 </div>
-                <div x-show="adminPasswordError" class="text-red-500 text-sm text-center mb-4">كلمة المرور غير صحيحة</div>
+                <div x-show="adminLoginError" class="text-red-500 text-sm text-center mb-4" x-text="adminLoginErrorMessage"></div>
                 <div class="flex gap-3">
                     <button type="button" @click="showAdminLogin = false" class="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition">إلغاء</button>
                     <button type="submit" class="flex-1 py-3 navy-gradient text-white rounded-xl font-bold hover:shadow-lg transition">دخول</button>
@@ -101,7 +104,7 @@
         </div>
     </div>
 
-    <!-- نافذة دخول الموظفين -->
+    <!-- نافذة دخول الموظفين (بدون تغيير) -->
     <div x-show="showEmployeeLogin" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="glass-card rounded-3xl p-8 w-full max-w-md">
             <h2 class="text-xl font-bold text-navy mb-6 text-center">دخول الموظفين</h2>
@@ -115,7 +118,7 @@
                 </div>
                 <div class="flex items-center gap-2 mb-4">
                     <input type="checkbox" id="rememberEmployee" x-model="rememberEmployee">
-                    <label for="rememberEmployee">حفظ تسجيل الدخول</label>
+                    <label for="rememberEmployee">تذكرني</label>
                 </div>
                 <div x-show="employeeError" class="text-red-500 text-sm text-center mb-4">بيانات الدخول غير صحيحة</div>
                 <div x-show="deviceError" class="text-red-500 text-sm text-center mb-4">لا يمكن الدخول من هذا الجهاز</div>
@@ -624,7 +627,7 @@
 </div>
 
 <script>
-    // ========== إعدادات Firebase (الخاصة بك) ==========
+    // ========== إعدادات Firebase ==========
     const firebaseConfig = {
         apiKey: "AIzaSyAGjsmtz8ZpzENYkK5_BscIEKltwNNs-us",
         authDomain: "abu-hudhayfa-agents.firebaseapp.com",
@@ -637,6 +640,7 @@
     // تهيئة Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    const auth = firebase.auth();
 
     // توليد معرف جهاز فريد (يُخزن في localStorage)
     function getDeviceId() {
@@ -655,9 +659,10 @@
             userRole: null,
             showAdminLogin: false,
             showEmployeeLogin: false,
+            adminEmail: '',
             adminPasswordInput: '',
-            adminPasswordError: false,
-            adminPassword: 'mana1234',
+            adminLoginError: false,
+            adminLoginErrorMessage: '',
             showAdminPassword: false,
             rememberAdmin: false,
             employeeUsername: '',
@@ -708,23 +713,48 @@
             },
 
             listenToChanges() {
+                // قراءة العملاء مع إضافة id من المفتاح
                 db.ref('clients').on('value', snapshot => {
                     const data = snapshot.val();
-                    this.clients = data ? Object.values(data) : [];
+                    if (data) {
+                        this.clients = Object.entries(data).map(([key, value]) => ({ id: key, ...value }));
+                    } else {
+                        this.clients = [];
+                    }
                 });
+
+                // قراءة الموظفين مع إضافة id
                 db.ref('employees').on('value', snapshot => {
                     const data = snapshot.val();
-                    this.employees = data ? Object.values(data) : [];
+                    if (data) {
+                        this.employees = Object.entries(data).map(([key, value]) => ({ id: key, ...value }));
+                    } else {
+                        this.employees = [];
+                    }
                 });
+
+                // قراءة سجلات الحضور مع إضافة id
                 db.ref('attendance').on('value', snapshot => {
                     const data = snapshot.val();
-                    this.attendanceRecords = data ? Object.values(data) : [];
+                    if (data) {
+                        this.attendanceRecords = Object.entries(data).map(([key, value]) => ({ id: key, ...value }));
+                    } else {
+                        this.attendanceRecords = [];
+                    }
                     this.checkAlerts();
                 });
+
+                // قراءة الملاحظات مع إضافة id
                 db.ref('notes').on('value', snapshot => {
                     const data = snapshot.val();
-                    this.notes = data ? Object.values(data) : [];
+                    if (data) {
+                        this.notes = Object.entries(data).map(([key, value]) => ({ id: key, ...value }));
+                    } else {
+                        this.notes = [];
+                    }
                 });
+
+                // قراءة إعدادات وقت العمل
                 db.ref('settings/workTime').on('value', snapshot => {
                     const data = snapshot.val();
                     if (data) {
@@ -737,7 +767,6 @@
                 });
             },
 
-            // حفظ تسجيل الدخول
             loadRememberedLogin() {
                 // يمكن تنفيذها حسب الحاجة
             },
@@ -825,30 +854,46 @@
 
             addClient() {
                 if (!this.newClient.accountNumber || !this.newClient.name) return;
-                const client = { ...this.newClient, id: Date.now() + '-' + Math.random().toString(36).substr(2, 9) };
-                db.ref('clients/' + client.id).set(client)
+                // إنشاء id جديد
+                const clientId = 'client_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                const client = { ...this.newClient };
+                db.ref('clients/' + clientId).set(client)
                     .then(() => {
-                        alert('تمت الإضافة');
+                        alert('تمت الإضافة بنجاح');
                         this.newClient = { accountNumber: '', name: '', region: '', commission: 0, ceiling: 0, rating: '', status: '', accountType: '' };
                     })
-                    .catch(err => alert('خطأ: ' + err.message));
+                    .catch(err => {
+                        console.error('خطأ في الإضافة:', err);
+                        alert('فشلت الإضافة: ' + err.message);
+                    });
             },
 
             deleteClient(id) {
+                if (!id) {
+                    alert('معرف العميل غير صالح');
+                    return;
+                }
                 if (confirm('تأكيد الحذف؟')) {
                     db.ref('clients/' + id).remove()
-                        .then(() => alert('تم الحذف'))
-                        .catch(err => alert('خطأ: ' + err.message));
+                        .then(() => alert('تم الحذف بنجاح'))
+                        .catch(err => {
+                            console.error('خطأ في الحذف:', err);
+                            alert('فشل الحذف: ' + err.message);
+                        });
                 }
             },
 
             editClient(client) {
+                if (!client || !client.id) return;
                 const newName = prompt('تعديل الاسم', client.name);
                 if (newName) {
                     client.name = newName;
                     db.ref('clients/' + client.id).update(client)
-                        .then(() => alert('تم التعديل'))
-                        .catch(err => alert(err.message));
+                        .then(() => alert('تم التعديل بنجاح'))
+                        .catch(err => {
+                            console.error('خطأ في التعديل:', err);
+                            alert('فشل التعديل: ' + err.message);
+                        });
                 }
             },
 
@@ -879,8 +924,8 @@
                     for (let i = 1; i < rows.length; i++) {
                         const row = rows[i];
                         if (row.length < 2) continue;
+                        const clientId = 'client_' + Date.now() + '_' + i + '_' + Math.random().toString(36).substr(2, 5);
                         const client = {
-                            id: Date.now() + '-' + i + '-' + Math.random().toString(36).substr(2, 5),
                             accountNumber: row[0]?.toString() || '',
                             name: row[1]?.toString() || '',
                             region: row[2]?.toString() || '',
@@ -891,7 +936,7 @@
                             accountType: row[7]?.toString() || ''
                         };
                         if (client.name) {
-                            db.ref('clients/' + client.id).set(client);
+                            db.ref('clients/' + clientId).set(client);
                         }
                     }
                     alert('تم رفع الملف وجاري الإضافة...');
@@ -903,30 +948,42 @@
             // ========== الموظفين ==========
             addEmployee() {
                 if (!this.newEmployee.name || !this.newEmployee.username || !this.newEmployee.password || !this.newEmployee.role) return;
-                const emp = { ...this.newEmployee, id: Date.now() + '-' + Math.random().toString(36).substr(2, 9) };
-                db.ref('employees/' + emp.id).set(emp)
+                const empId = 'emp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                const emp = { ...this.newEmployee };
+                db.ref('employees/' + empId).set(emp)
                     .then(() => {
-                        alert('تمت الإضافة');
+                        alert('تمت الإضافة بنجاح');
                         this.newEmployee = { name: '', username: '', password: '', phone: '', salary: 0, role: '' };
                     })
-                    .catch(err => alert(err.message));
+                    .catch(err => {
+                        console.error('خطأ في الإضافة:', err);
+                        alert('فشلت الإضافة: ' + err.message);
+                    });
             },
 
             deleteEmployee(id) {
+                if (!id) return;
                 if (confirm('حذف الموظف؟')) {
                     db.ref('employees/' + id).remove()
                         .then(() => alert('تم الحذف'))
-                        .catch(err => alert(err.message));
+                        .catch(err => {
+                            console.error('خطأ في الحذف:', err);
+                            alert('فشل الحذف: ' + err.message);
+                        });
                 }
             },
 
             editEmployee(emp) {
+                if (!emp || !emp.id) return;
                 const newName = prompt('الاسم الجديد', emp.name);
                 if (newName) {
                     emp.name = newName;
                     db.ref('employees/' + emp.id).update(emp)
                         .then(() => alert('تم التعديل'))
-                        .catch(err => alert(err.message));
+                        .catch(err => {
+                            console.error('خطأ في التعديل:', err);
+                            alert('فشل التعديل: ' + err.message);
+                        });
                 }
             },
 
@@ -1051,8 +1108,8 @@
                     }
                     const start = new Date(); start.setHours(startHour, startMin, 0);
                     const status = now > start ? 'متأخر' : 'في الموعد';
+                    const newId = 'att_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                     const newRecord = {
-                        id: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
                         employeeId: this.currentEmployee.id,
                         date: today,
                         shift: this.selectedShift,
@@ -1061,7 +1118,7 @@
                         duration: null,
                         status: status
                     };
-                    db.ref('attendance/' + newRecord.id).set(newRecord);
+                    db.ref('attendance/' + newId).set(newRecord);
                 } else if (record.checkIn && !record.checkOut) {
                     // تسجيل خروج
                     record.checkOut = timeStr;
@@ -1113,23 +1170,51 @@
             // ========== الملاحظات ==========
             addNote() {
                 if (!this.newNote.trim()) return;
-                const note = { id: Date.now() + '-' + Math.random().toString(36).substr(2, 9), content: this.newNote.trim() };
-                db.ref('notes/' + note.id).set(note).then(() => { this.newNote = ''; });
+                const noteId = 'note_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                const note = { content: this.newNote.trim() };
+                db.ref('notes/' + noteId).set(note)
+                    .then(() => { this.newNote = ''; })
+                    .catch(err => alert('فشل الإضافة: ' + err.message));
             },
 
             deleteNote(id) {
-                db.ref('notes/' + id).remove();
+                if (confirm('حذف الملاحظة؟')) {
+                    db.ref('notes/' + id).remove()
+                        .then(() => alert('تم الحذف'))
+                        .catch(err => alert('فشل الحذف: ' + err.message));
+                }
             },
 
-            // ========== الدخول ==========
+            // ========== الدخول باستخدام Firebase Auth ==========
             verifyAdmin() {
-                if (this.adminPasswordInput === this.adminPassword) {
-                    this.loggedIn = true;
-                    this.userRole = 'admin';
-                    this.showAdminLogin = false;
-                    this.adminPasswordError = false;
-                } else {
-                    this.adminPasswordError = true;
+                this.adminLoginError = false;
+                this.adminLoginErrorMessage = '';
+                auth.signInWithEmailAndPassword(this.adminEmail, this.adminPasswordInput)
+                    .then((userCredential) => {
+                        // تسجيل الدخول ناجح
+                        this.loggedIn = true;
+                        this.userRole = 'admin';
+                        this.showAdminLogin = false;
+                        // يمكن حفظ حالة تذكرني باستخدام localStorage
+                    })
+                    .catch((error) => {
+                        console.error('خطأ في دخول الإدارة:', error);
+                        this.adminLoginError = true;
+                        this.adminLoginErrorMessage = this.getFriendlyErrorMessage(error.code);
+                    });
+            },
+
+            getFriendlyErrorMessage(errorCode) {
+                switch (errorCode) {
+                    case 'auth/user-not-found':
+                    case 'auth/wrong-password':
+                        return 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+                    case 'auth/invalid-email':
+                        return 'البريد الإلكتروني غير صالح';
+                    case 'auth/user-disabled':
+                        return 'هذا الحساب معطل';
+                    default:
+                        return 'حدث خطأ في تسجيل الدخول. حاول مرة أخرى.';
                 }
             },
 
@@ -1168,9 +1253,25 @@
             },
 
             logout() {
-                this.loggedIn = false;
-                this.userRole = null;
-                this.currentEmployee = null;
+                if (this.userRole === 'admin') {
+                    // تسجيل خروج من Firebase Auth
+                    auth.signOut().then(() => {
+                        this.loggedIn = false;
+                        this.userRole = null;
+                        this.currentEmployee = null;
+                    }).catch((error) => {
+                        console.error('خطأ في تسجيل الخروج:', error);
+                        // حتى لو فشل، ننظف الحالة المحلية
+                        this.loggedIn = false;
+                        this.userRole = null;
+                        this.currentEmployee = null;
+                    });
+                } else {
+                    // موظف
+                    this.loggedIn = false;
+                    this.userRole = null;
+                    this.currentEmployee = null;
+                }
             },
 
             // ========== الرسوم البيانية ==========
@@ -1210,4 +1311,4 @@
 </script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </body>
-  </html>
+</html>
