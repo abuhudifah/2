@@ -54,6 +54,14 @@
             70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
             100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
         }
+        .pulse-blue {
+            animation: pulse-blue 2s infinite;
+        }
+        @keyframes pulse-blue {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen p-4">
@@ -384,7 +392,7 @@
             </div>
         </div>
 
-        <!-- ========== تبويب نظام الحضور المتطور للإدارة (مع فترتين) ========== -->
+        <!-- ========== تبويب نظام الحضور المتطور للإدارة (مع فترتين وتحسينات) ========== -->
         <div x-show="adminTab === 'attendance'" class="space-y-6">
             <!-- لوحة تحكم الحضور -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -443,6 +451,19 @@
                     <label class="block text-sm font-bold mb-2">حد التأخير (دقائق)</label>
                     <input type="number" x-model="lateThreshold" class="w-full p-2 border-2 border-gray-200 rounded-xl md:w-64">
                 </div>
+                <!-- إعدادات الموقع الجغرافي -->
+                <div class="mt-4 flex items-center gap-4">
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" x-model="enableGeolocation">
+                        <span class="text-sm font-bold">تفعيل التحقق من الموقع الجغرافي</span>
+                    </label>
+                    <div x-show="enableGeolocation" class="flex gap-2 items-center">
+                        <input type="text" x-model="workLocationLat" placeholder="خط العرض" class="p-2 border-2 border-gray-200 rounded-xl w-32">
+                        <input type="text" x-model="workLocationLng" placeholder="خط الطول" class="p-2 border-2 border-gray-200 rounded-xl w-32">
+                        <input type="number" x-model="workLocationRadius" placeholder="نصف القطر (متر)" class="p-2 border-2 border-gray-200 rounded-xl w-32">
+                        <button @click="getCurrentLocation" class="px-3 py-2 bg-teal-500 text-white rounded-xl"><i class="fas fa-map-marker-alt"></i></button>
+                    </div>
+                </div>
                 <button @click="saveWorkSettings" class="mt-4 px-4 py-2 navy-gradient text-white rounded-xl font-bold">حفظ الإعدادات</button>
             </div>
 
@@ -452,7 +473,7 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-right">
                         <thead class="bg-gray-100">
-                            <tr><th class="p-3">الموظف</th><th class="p-3">التاريخ</th><th class="p-3">الفترة</th><th class="p-3">الحضور</th><th class="p-3">الانصراف</th><th class="p-3">المدة</th><th class="p-3">الحالة</th></tr>
+                            <tr><th class="p-3">الموظف</th><th class="p-3">التاريخ</th><th class="p-3">الفترة</th><th class="p-3">الحضور</th><th class="p-3">الانصراف</th><th class="p-3">المدة</th><th class="p-3">الحالة</th><th class="p-3">الموقع</th></tr>
                         </thead>
                         <tbody>
                             <template x-for="att in attendanceRecords.slice().reverse()" :key="att.id">
@@ -466,6 +487,7 @@
                                     <td class="p-3">
                                         <span :class="att.status === 'متأخر' ? 'bg-orange-500 text-white px-2 py-1 rounded-full text-xs' : (att.status === 'في الموعد' ? 'bg-green-500 text-white px-2 py-1 rounded-full text-xs' : 'bg-gray-400 text-white px-2 py-1 rounded-full text-xs')" x-text="att.status || 'غير محدد'"></span>
                                     </td>
+                                    <td class="p-3" x-text="att.location ? 'مسموح' : '--'"></td>
                                 </tr>
                             </template>
                         </tbody>
@@ -543,15 +565,26 @@
             <button @click="logout" class="px-4 py-2 bg-red-500/10 text-red-600 rounded-xl hover:bg-red-500/20 transition"><i class="fas fa-sign-out-alt ml-1"></i> خروج</button>
         </div>
 
-        <!-- نظام الحضور بلمسة واحدة -->
+        <!-- نظام الحضور بلمسة واحدة مع تحسينات -->
         <div class="glass-card rounded-2xl p-6">
             <h3 class="text-xl font-bold text-navy mb-6 text-center">نظام الحضور الذكي</h3>
             <div class="flex flex-col items-center justify-center gap-6">
+                <!-- اختيار الفترة (صباحي/مسائي) -->
+                <div class="w-full max-w-md">
+                    <label class="block text-sm font-bold text-navy mb-2">اختر الفترة</label>
+                    <select x-model="selectedShift" class="w-full p-3 border-2 border-gray-200 rounded-xl">
+                        <option value="صباحي">صباحي</option>
+                        <option value="مسائي">مسائي</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1" x-show="!isShiftAvailable()" x-text="'غير متاح الآن'"></p>
+                </div>
+
                 <!-- زر الحضور الديناميكي -->
-                <button @click="handleAttendance" :class="attendanceButtonClass" class="w-48 h-48 rounded-full text-white text-2xl font-bold shadow-2xl flex flex-col items-center justify-center gap-2 transition-all hover:scale-105">
+                <button @click="handleAttendance" :class="attendanceButtonClass" class="w-48 h-48 rounded-full text-white text-2xl font-bold shadow-2xl flex flex-col items-center justify-center gap-2 transition-all hover:scale-105" :disabled="!isShiftAvailable() && !canCheckOut()">
                     <i :class="attendanceIcon" class="text-5xl"></i>
                     <span x-text="attendanceButtonText"></span>
                 </button>
+
                 <!-- بطاقة الحالة اللحظية -->
                 <div class="w-full max-w-md p-4 bg-gray-100 rounded-2xl text-center">
                     <p class="text-lg font-bold text-navy">حالتك اليوم</p>
@@ -561,6 +594,7 @@
                         <div class="bg-teal-600 h-4 rounded-full" :style="'width: ' + workProgress + '%'"></div>
                     </div>
                 </div>
+
                 <!-- سجل الحركة السريع -->
                 <div class="w-full max-w-md">
                     <h4 class="font-bold text-navy mb-2">آخر الحركات</h4>
@@ -688,7 +722,7 @@
             employees: [],
             newEmployee: { name: '', username: '', password: '', phone: '', salary: 0, role: '' },
 
-            // بيانات الحضور (مع فترتين)
+            // بيانات الحضور (مع فترتين وتحسينات)
             attendanceRecords: [],
             selectedShift: 'صباحي',
             morningStart: '09:00',
@@ -696,6 +730,10 @@
             eveningStart: '14:00',
             eveningEnd: '18:00',
             lateThreshold: 15,
+            enableGeolocation: false,
+            workLocationLat: '',
+            workLocationLng: '',
+            workLocationRadius: 100, // متر
             alerts: [],
 
             // بيانات الملاحظات
@@ -706,7 +744,6 @@
             init() {
                 this.loadRememberedLogin();
                 this.listenToChanges();
-                this.loadWorkSettings();
                 this.$nextTick(() => {
                     if (document.getElementById('attendanceChart')) this.renderAttendanceChart();
                 });
@@ -763,6 +800,10 @@
                         this.eveningStart = data.eveningStart || '14:00';
                         this.eveningEnd = data.eveningEnd || '18:00';
                         this.lateThreshold = data.lateThreshold || 15;
+                        this.enableGeolocation = data.enableGeolocation || false;
+                        this.workLocationLat = data.workLocationLat || '';
+                        this.workLocationLng = data.workLocationLng || '';
+                        this.workLocationRadius = data.workLocationRadius || 100;
                     }
                 });
             },
@@ -987,11 +1028,38 @@
                 }
             },
 
-            // ========== نظام الحضور ==========
+            // ========== نظام الحضور المتطور ==========
+            // التحقق من أن الفترة المختارة متاحة الآن (للحضور فقط)
+            isShiftAvailable() {
+                if (!this.currentEmployee) return false;
+                const now = new Date();
+                const currentTime = now.getHours() * 60 + now.getMinutes();
+                let start, end;
+                if (this.selectedShift === 'صباحي') {
+                    [start, end] = [this.morningStart, this.morningEnd];
+                } else {
+                    [start, end] = [this.eveningStart, this.eveningEnd];
+                }
+                const [startHour, startMin] = start.split(':').map(Number);
+                const [endHour, endMin] = end.split(':').map(Number);
+                const startMins = startHour * 60 + startMin;
+                const endMins = endHour * 60 + endMin;
+                // الفترة متاحة إذا كان الوقت بين البداية والنهاية
+                return currentTime >= startMins && currentTime <= endMins;
+            },
+
+            // هل يمكن تسجيل خروج (أي يوجد تسجيل دخول بدون خروج لنفس الفترة)
+            canCheckOut() {
+                if (!this.currentEmployee) return false;
+                const today = new Date().toLocaleDateString('en-CA');
+                const record = this.attendanceRecords.find(a => a.employeeId === this.currentEmployee.id && a.date === today && a.shift === this.selectedShift);
+                return record && record.checkIn && !record.checkOut;
+            },
+
             get attendanceButtonText() {
                 if (!this.currentEmployee) return 'تسجيل الدخول';
                 const today = new Date().toLocaleDateString('en-CA');
-                const record = this.attendanceRecords.find(a => a.employeeId === this.currentEmployee.id && a.date === today);
+                const record = this.attendanceRecords.find(a => a.employeeId === this.currentEmployee.id && a.date === today && a.shift === this.selectedShift);
                 if (!record) return 'تسجيل دخول';
                 if (record.checkIn && !record.checkOut) return 'تسجيل خروج';
                 if (record.checkIn && record.checkOut) return 'تم الانصراف';
@@ -1001,21 +1069,15 @@
             get attendanceButtonClass() {
                 if (!this.currentEmployee) return 'bg-gray-400';
                 const today = new Date().toLocaleDateString('en-CA');
-                const record = this.attendanceRecords.find(a => a.employeeId === this.currentEmployee.id && a.date === today);
+                const record = this.attendanceRecords.find(a => a.employeeId === this.currentEmployee.id && a.date === today && a.shift === this.selectedShift);
                 if (!record) {
-                    // التحقق من التأخر حسب الفترة المختارة
-                    const now = new Date();
-                    let startHour, startMin;
-                    if (this.selectedShift === 'صباحي') {
-                        [startHour, startMin] = this.morningStart.split(':').map(Number);
+                    if (this.isShiftAvailable()) {
+                        return 'bg-green-500 pulse-green';
                     } else {
-                        [startHour, startMin] = this.eveningStart.split(':').map(Number);
+                        return 'bg-orange-500 pulse-orange';
                     }
-                    const start = new Date(); start.setHours(startHour, startMin, 0);
-                    if (now > start) return 'bg-orange-500 pulse-orange';
-                    return 'bg-green-500 pulse-green';
                 }
-                if (record.checkIn && !record.checkOut) return 'bg-blue-500';
+                if (record.checkIn && !record.checkOut) return 'bg-blue-500 pulse-blue';
                 if (record.checkIn && record.checkOut) return 'bg-gray-500';
                 return 'bg-green-500';
             },
@@ -1023,7 +1085,7 @@
             get attendanceIcon() {
                 if (!this.currentEmployee) return 'fas fa-clock';
                 const today = new Date().toLocaleDateString('en-CA');
-                const record = this.attendanceRecords.find(a => a.employeeId === this.currentEmployee.id && a.date === today);
+                const record = this.attendanceRecords.find(a => a.employeeId === this.currentEmployee.id && a.date === today && a.shift === this.selectedShift);
                 if (!record) return 'fas fa-sign-in-alt';
                 if (record.checkIn && !record.checkOut) return 'fas fa-sign-out-alt';
                 return 'fas fa-check-circle';
@@ -1032,7 +1094,7 @@
             get todayStatus() {
                 if (!this.currentEmployee) return 'غير مسجل';
                 const today = new Date().toLocaleDateString('en-CA');
-                const record = this.attendanceRecords.find(a => a.employeeId === this.currentEmployee.id && a.date === today);
+                const record = this.attendanceRecords.find(a => a.employeeId === this.currentEmployee.id && a.date === today && a.shift === this.selectedShift);
                 if (!record) return 'لم يسجل بعد';
                 if (record.checkIn && !record.checkOut) return 'في الدوام';
                 if (record.checkIn && record.checkOut) return 'مغادر';
@@ -1042,7 +1104,7 @@
             get workedHours() {
                 if (!this.currentEmployee) return '0';
                 const today = new Date().toLocaleDateString('en-CA');
-                const record = this.attendanceRecords.find(a => a.employeeId === this.currentEmployee.id && a.date === today);
+                const record = this.attendanceRecords.find(a => a.employeeId === this.currentEmployee.id && a.date === today && a.shift === this.selectedShift);
                 if (!record || !record.checkIn) return '0';
                 const now = new Date();
                 const checkIn = new Date();
@@ -1059,15 +1121,15 @@
             },
 
             get totalDailyHours() {
+                let start, end;
                 if (this.selectedShift === 'صباحي') {
-                    const [sH, sM] = this.morningStart.split(':').map(Number);
-                    const [eH, eM] = this.morningEnd.split(':').map(Number);
-                    return ((eH*60 + eM) - (sH*60 + sM)) / 60;
+                    [start, end] = [this.morningStart, this.morningEnd];
                 } else {
-                    const [sH, sM] = this.eveningStart.split(':').map(Number);
-                    const [eH, eM] = this.eveningEnd.split(':').map(Number);
-                    return ((eH*60 + eM) - (sH*60 + sM)) / 60;
+                    [start, end] = [this.eveningStart, this.eveningEnd];
                 }
+                const [sH, sM] = start.split(':').map(Number);
+                const [eH, eM] = end.split(':').map(Number);
+                return ((eH*60 + eM) - (sH*60 + sM)) / 60;
             },
 
             get workProgress() {
@@ -1091,12 +1153,56 @@
                     }));
             },
 
-            handleAttendance() {
+            // التحقق من الموقع الجغرافي
+            async verifyLocation() {
+                if (!this.enableGeolocation || !this.workLocationLat || !this.workLocationLng) return true; // إذا لم تكن مفعلة أو لم تحدد الإحداثيات، نسمح
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
+                    });
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const distance = this.calculateDistance(lat, lng, parseFloat(this.workLocationLat), parseFloat(this.workLocationLng));
+                    return distance <= this.workLocationRadius;
+                } catch (error) {
+                    console.error('خطأ في الحصول على الموقع:', error);
+                    alert('تعذر الحصول على موقعك. يرجى التحقق من صلاحيات الموقع.');
+                    return false;
+                }
+            },
+
+            calculateDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371e3; // متر
+                const φ1 = lat1 * Math.PI/180;
+                const φ2 = lat2 * Math.PI/180;
+                const Δφ = (lat2-lat1) * Math.PI/180;
+                const Δλ = (lon2-lon1) * Math.PI/180;
+
+                const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                        Math.cos(φ1) * Math.cos(φ2) *
+                        Math.sin(Δλ/2) * Math.sin(Δλ/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+                return R * c;
+            },
+
+            async handleAttendance() {
                 if (!this.currentEmployee) return;
+                
+                // التحقق من الموقع إذا مفعل
+                if (this.enableGeolocation) {
+                    const locationValid = await this.verifyLocation();
+                    if (!locationValid) {
+                        if (!confirm('أنت خارج نطاق العمل المسموح به. هل تريد التسجيل على أي حال؟ (سيتم تسجيل مخالفة)')) {
+                            return;
+                        }
+                    }
+                }
+
                 const today = new Date().toLocaleDateString('en-CA');
                 const now = new Date();
                 const timeStr = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-                const record = this.attendanceRecords.find(a => a.employeeId === this.currentEmployee.id && a.date === today);
+                const record = this.attendanceRecords.find(a => a.employeeId === this.currentEmployee.id && a.date === today && a.shift === this.selectedShift);
 
                 if (!record) {
                     // تسجيل دخول
@@ -1116,7 +1222,8 @@
                         checkIn: timeStr,
                         checkOut: null,
                         duration: null,
-                        status: status
+                        status: status,
+                        location: this.enableGeolocation ? (locationValid ? 'مسموح' : 'خارج النطاق') : null
                     };
                     db.ref('attendance/' + newId).set(newRecord);
                 } else if (record.checkIn && !record.checkOut) {
@@ -1128,7 +1235,7 @@
                     record.duration = Math.floor(diff/60) + ' ساعة ' + (diff%60) + ' دقيقة';
                     db.ref('attendance/' + record.id).update(record);
                 } else {
-                    alert('لقد سجلت حضور وانصراف مسبقاً');
+                    alert('لقد سجلت حضور وانصراف مسبقاً لهذه الفترة');
                 }
             },
 
@@ -1138,13 +1245,40 @@
                 const lateToday = this.attendanceRecords.filter(a => a.date === today && a.status === 'متأخر');
                 lateToday.forEach(att => {
                     const emp = this.getEmployeeName(att.employeeId);
-                    if (!this.alerts.some(a => a.employeeId === att.employeeId && a.date === today)) {
+                    if (!this.alerts.some(a => a.employeeId === att.employeeId && a.date === today && a.shift === att.shift)) {
                         this.alerts.push({
                             id: Date.now() + Math.random(),
                             employeeId: att.employeeId,
                             date: today,
-                            message: `الموظف ${emp} متأخر اليوم (سجل دخول ${att.checkIn})`
+                            shift: att.shift,
+                            message: `الموظف ${emp} متأخر في الفترة ${att.shift} (سجل دخول ${att.checkIn})`
                         });
+                    }
+                });
+                // تنبيهات لنسيان تسجيل الخروج (بعد نهاية الدوام بساعة)
+                const now = new Date();
+                this.attendanceRecords.forEach(att => {
+                    if (att.date === today && att.checkIn && !att.checkOut) {
+                        let endHour, endMin;
+                        if (att.shift === 'صباحي') {
+                            [endHour, endMin] = this.morningEnd.split(':').map(Number);
+                        } else {
+                            [endHour, endMin] = this.eveningEnd.split(':').map(Number);
+                        }
+                        const end = new Date();
+                        end.setHours(endHour, endMin, 0);
+                        if (now > end && (now - end) > 3600000) { // بعد ساعة من انتهاء الدوام
+                            const emp = this.getEmployeeName(att.employeeId);
+                            if (!this.alerts.some(a => a.employeeId === att.employeeId && a.date === today && a.type === 'missed-checkout')) {
+                                this.alerts.push({
+                                    id: Date.now() + Math.random(),
+                                    employeeId: att.employeeId,
+                                    date: today,
+                                    type: 'missed-checkout',
+                                    message: `الموظف ${emp} لم يسجل انصراف بعد في الفترة ${att.shift}`
+                                });
+                            }
+                        }
                     }
                 });
             },
@@ -1159,8 +1293,21 @@
                     morningEnd: this.morningEnd,
                     eveningStart: this.eveningStart,
                     eveningEnd: this.eveningEnd,
-                    lateThreshold: this.lateThreshold
+                    lateThreshold: this.lateThreshold,
+                    enableGeolocation: this.enableGeolocation,
+                    workLocationLat: this.workLocationLat,
+                    workLocationLng: this.workLocationLng,
+                    workLocationRadius: this.workLocationRadius
                 }).then(() => alert('تم حفظ إعدادات الدوام'));
+            },
+
+            getCurrentLocation() {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    this.workLocationLat = pos.coords.latitude;
+                    this.workLocationLng = pos.coords.longitude;
+                }, (err) => {
+                    alert('تعذر الحصول على الموقع: ' + err.message);
+                });
             },
 
             generateReport() {
